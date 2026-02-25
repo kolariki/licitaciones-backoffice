@@ -37,9 +37,7 @@ export default function Licitaciones() {
     const params = new URLSearchParams({ page: p, limit: 20 })
     if (q) params.set('search', q)
     try {
-      const res = await fetch(`${API_URL}/api/licitaciones-costa-rica/licitaciones?${params}`, {
-        headers: getAuthHeaders()
-      })
+      const res = await fetch(`${API_URL}/api/dashboard/licitaciones-cr?${params}`)
       const d = await res.json()
       const lics = d.licitaciones || []
       setLicitaciones(lics)
