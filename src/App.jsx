@@ -1,6 +1,6 @@
 import React from 'react'
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom'
-import { LayoutDashboard, Users, Bell, BarChart3, FileText, Menu, Layers, Send, LogOut } from 'lucide-react'
+import { LayoutDashboard, Users, Bell, BarChart3, FileText, Menu, Layers, Send, LogOut, MailCheck } from 'lucide-react'
 import { AuthProvider, useAuth } from './hooks/useAuth'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
@@ -10,6 +10,7 @@ import Alerts from './pages/Alerts'
 import Analytics from './pages/Analytics'
 import Licitaciones from './pages/Licitaciones'
 import Recomendaciones from './pages/Recomendaciones'
+import AlertasEnviadas from './pages/AlertasEnviadas'
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -18,6 +19,7 @@ const navItems = [
   { to: '/analytics', icon: BarChart3, label: 'Analíticas' },
   { to: '/licitaciones', icon: FileText, label: 'Licitaciones' },
   { to: '/recomendaciones', icon: Send, label: 'Recomendaciones' },
+  { to: '/alertas-enviadas', icon: MailCheck, label: 'Alertas Enviadas' },
 ]
 
 function Sidebar({ open, setOpen }) {
@@ -100,6 +102,7 @@ function ProtectedApp() {
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/licitaciones" element={<Licitaciones />} />
             <Route path="/recomendaciones" element={<Recomendaciones />} />
+            <Route path="/alertas-enviadas" element={<AlertasEnviadas />} />
           </Routes>
         </main>
       </div>
