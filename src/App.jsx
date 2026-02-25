@@ -26,7 +26,7 @@ const navItems = [
   { to: '/preview-alertas', icon: Eye, label: 'Preview Alertas' },
 ]
 
-function Sidebar({ open, setOpen }) {
+function Sidebar({ open, setOpen, alertsPending, onDismissAlerts }) {
   const { user, logout } = useAuth()
   return (
     <>
@@ -40,21 +40,28 @@ function Sidebar({ open, setOpen }) {
           </div>
         </div>
         <nav className="p-4 space-y-1 flex-1">
-          {navItems.map(({ to, icon: Icon, label }) => (
-            <NavLink
-              key={to}
-              to={to}
-              onClick={() => setOpen(false)}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  isActive ? 'bg-blue-600/20 text-blue-400' : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                }`
-              }
-            >
-              <Icon className="w-5 h-5" />
-              {label}
-            </NavLink>
-          ))}
+          {navItems.map(({ to, icon: Icon, label }) => {
+            const isAlertItem = to === '/preview-alertas' && alertsPending
+            return (
+              <NavLink
+                key={to}
+                to={to}
+                onClick={() => { setOpen(false); if (isAlertItem) onDismissAlerts() }}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    isAlertItem ? 'bg-green-500/20 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.3)] animate-pulse' :
+                    isActive ? 'bg-blue-600/20 text-blue-400' : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                  }`
+                }
+              >
+                <Icon className={`w-5 h-5 ${isAlertItem ? 'text-green-400' : ''}`} />
+                {label}
+                {isAlertItem && (
+                  <span className="ml-auto w-2.5 h-2.5 rounded-full bg-green-400 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-ping" />
+                )}
+              </NavLink>
+            )
+          })}
         </nav>
         <div className="p-4 border-t border-gray-800">
           <div className="flex items-center gap-3 mb-3">
@@ -78,6 +85,13 @@ function Sidebar({ open, setOpen }) {
 function ProtectedApp() {
   const { isAuthenticated, loading } = useAuth()
   const [sidebarOpen, setSidebarOpen] = React.useState(false)
+  const [alertsPending, setAlertsPending] = React.useState(false)
+
+  React.useEffect(() => {
+    const handler = () => setAlertsPending(true)
+    window.addEventListener('alertas-pending', handler)
+    return () => window.removeEventListener('alertas-pending', handler)
+  }, [])
 
   if (loading) return (
     <div className="min-h-screen bg-gray-950 flex items-center justify-center">
@@ -89,7 +103,7 @@ function ProtectedApp() {
 
   return (
     <div className="min-h-screen bg-gray-950">
-      <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
+      <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} alertsPending={alertsPending} onDismissAlerts={() => setAlertsPending(false)} />
       <div className="lg:ml-64">
         <header className="sticky top-0 z-30 bg-gray-950/80 backdrop-blur border-b border-gray-800 px-4 py-3 flex items-center gap-4">
           <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-gray-400 hover:text-white">

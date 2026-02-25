@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-import { Play, Loader2, CheckCircle2, XCircle, Clock, Server, Search, Bell, Calendar, Star, FileText, Download, BarChart3, Hash, Database, RefreshCw, Activity, Terminal, ChevronDown, ChevronUp } from 'lucide-react'
+import { Play, Loader2, CheckCircle2, XCircle, Clock, Server, Search, Bell, Calendar, Star, FileText, Download, BarChart3, Hash, Database, RefreshCw, Activity, Terminal, ChevronDown, ChevronUp, Zap } from 'lucide-react'
 
 const SCRAPER_URL = 'https://web-production-0dbf.up.railway.app'
 
@@ -131,6 +131,13 @@ const SCRAPERS = [
   }
 ]
 
+const CHAIN_STEPS = [
+  { id: 'faltantes', name: 'Scraper Faltantes', endpoint: '/api/scrapers/faltantes/run' },
+  { id: 'alertas', name: 'Verificación de Alertas', endpoint: '/api/alertas/run' },
+  { id: 'codigosProductos', name: 'Actualizar Códigos de Productos', endpoint: '/api/actualizar-codigos-productos' },
+  { id: 'codigosClasificacion', name: 'Verificar Códigos de Clasificación', endpoint: '/api/codigos/verificar' },
+]
+
 const colorMap = {
   blue: 'bg-blue-600/20 text-blue-400 border-blue-500/30',
   purple: 'bg-purple-600/20 text-purple-400 border-purple-500/30',
@@ -163,7 +170,7 @@ const btnColorMap = {
   lime: 'bg-lime-600 hover:bg-lime-700',
 }
 
-function ScraperCard({ scraper, serverStatus, onRun }) {
+function ScraperCard({ scraper, serverStatus }) {
   const [running, setRunning] = useState(false)
   const [runningExtra, setRunningExtra] = useState(false)
   const [result, setResult] = useState(null)
@@ -225,7 +232,6 @@ function ScraperCard({ scraper, serverStatus, onRun }) {
               </p>
             )}
 
-            {/* Results */}
             {result && (
               <div className={`text-xs px-3 py-2 rounded-lg mb-3 ${result.success ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
                 {result.success ? <CheckCircle2 className="w-3 h-3 inline mr-1" /> : <XCircle className="w-3 h-3 inline mr-1" />}
@@ -266,6 +272,96 @@ function ScraperCard({ scraper, serverStatus, onRun }) {
   )
 }
 
+function ChainExecution({ onChainComplete }) {
+  const [running, setRunning] = useState(false)
+  const [currentStep, setCurrentStep] = useState(-1)
+  const [stepResults, setStepResults] = useState({})
+
+  const runChain = async () => {
+    setRunning(true)
+    setStepResults({})
+
+    for (let i = 0; i < CHAIN_STEPS.length; i++) {
+      const step = CHAIN_STEPS[i]
+      setCurrentStep(i)
+      try {
+        const r = await fetch(`${SCRAPER_URL}${step.endpoint}`, { method: 'POST' })
+        const d = await r.json()
+        setStepResults(prev => ({ ...prev, [step.id]: { success: d.success !== false, message: d.message || 'OK' } }))
+      } catch (e) {
+        setStepResults(prev => ({ ...prev, [step.id]: { success: false, message: e.message } }))
+        // Continue chain even on error
+      }
+    }
+
+    setCurrentStep(CHAIN_STEPS.length)
+    setRunning(false)
+    if (onChainComplete) onChainComplete()
+  }
+
+  return (
+    <div className="bg-gradient-to-r from-violet-500/5 to-amber-500/5 border border-violet-500/20 rounded-xl p-5">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-violet-500/20 to-amber-500/20 border border-violet-500/30 flex items-center justify-center">
+            <Zap className="w-5 h-5 text-amber-400" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-white">Cadena de Ejecución</h3>
+            <p className="text-xs text-gray-400">Faltantes → Alertas → Códigos Productos → Códigos Clasificación</p>
+          </div>
+        </div>
+        <button
+          onClick={runChain}
+          disabled={running}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-violet-600 to-amber-600 hover:from-violet-700 hover:to-amber-700 transition-all disabled:opacity-50 shadow-lg shadow-violet-500/20"
+        >
+          {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+          {running ? 'Ejecutando cadena...' : 'Ejecutar Cadena'}
+        </button>
+      </div>
+
+      {(running || currentStep >= 0) && (
+        <div className="space-y-2 mt-3">
+          {CHAIN_STEPS.map((step, i) => {
+            const result = stepResults[step.id]
+            const isCurrent = i === currentStep && running
+            const isDone = result !== undefined
+            const isPending = i > currentStep
+
+            return (
+              <div key={step.id} className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs transition-all ${
+                isCurrent ? 'bg-blue-500/10 border border-blue-500/20' :
+                isDone && result.success ? 'bg-green-500/5 border border-green-500/10' :
+                isDone && !result.success ? 'bg-red-500/5 border border-red-500/10' :
+                'bg-gray-800/30 border border-transparent'
+              }`}>
+                <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                  {isCurrent && <Loader2 className="w-4 h-4 animate-spin text-blue-400" />}
+                  {isDone && result.success && <CheckCircle2 className="w-4 h-4 text-green-400" />}
+                  {isDone && !result.success && <XCircle className="w-4 h-4 text-red-400" />}
+                  {isPending && <div className="w-2 h-2 rounded-full bg-gray-600" />}
+                </div>
+                <span className={`font-medium flex-1 ${isCurrent ? 'text-blue-400' : isDone ? (result.success ? 'text-green-400' : 'text-red-400') : 'text-gray-500'}`}>
+                  {step.name}
+                </span>
+                {isDone && <span className="text-gray-500 truncate max-w-[200px]">{result.message}</span>}
+                {isCurrent && <span className="text-blue-400 animate-pulse">Ejecutando...</span>}
+              </div>
+            )
+          })}
+          {currentStep >= CHAIN_STEPS.length && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-500/10 border border-green-500/20 text-xs text-green-400 font-medium">
+              <CheckCircle2 className="w-4 h-4" />
+              ¡Cadena completada! Revisá Preview Alertas para enviar.
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function ScraperPrincipal() {
   const [serverStatus, setServerStatus] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -280,9 +376,14 @@ export default function ScraperPrincipal() {
 
   useEffect(() => {
     fetchStatus()
-    const interval = setInterval(fetchStatus, 30000) // refresh every 30s
+    const interval = setInterval(fetchStatus, 30000)
     return () => clearInterval(interval)
   }, [fetchStatus])
+
+  const handleChainComplete = () => {
+    // Signal to App.jsx that there are pending alerts
+    window.dispatchEvent(new CustomEvent('alertas-pending'))
+  }
 
   const stats = serverStatus?.stats || {}
 
@@ -304,6 +405,9 @@ export default function ScraperPrincipal() {
         <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>
       ) : (
         <>
+          {/* Chain execution */}
+          <ChainExecution onChainComplete={handleChainComplete} />
+
           {/* Server stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
