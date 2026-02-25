@@ -139,6 +139,15 @@ export default function AlertasEnviadas() {
 
           {/* Users list */}
           <div className="space-y-3">
+            {selectedWeek && usuarios.length === 0 && (
+              <div className="text-center py-8 bg-gray-900 border border-gray-800 rounded-xl">
+                <BarChart3 className="w-8 h-8 text-gray-600 mx-auto mb-3" />
+                <p className="text-gray-400 text-sm">El detalle por usuario solo está disponible para la semana actual</p>
+                <button onClick={() => loadWeek(null)} className="mt-3 text-xs text-blue-400 hover:text-blue-300 underline">
+                  Volver a semana actual
+                </button>
+              </div>
+            )}
             {filteredUsers.map(u => {
               const isExpanded = expandedUsers[u.usuarioId]
               const allAlertas = [
