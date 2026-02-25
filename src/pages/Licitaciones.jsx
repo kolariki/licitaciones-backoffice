@@ -14,11 +14,11 @@ export default function Licitaciones() {
     setLoading(true)
     const params = new URLSearchParams({ page: p, limit: 20 })
     if (q) params.set('search', q)
-    fetch(`${API_URL}/api/licitaciones-costa-rica/licitaciones?${params}`)
+    fetch(`${API_URL}/api/v2/licitaciones?${params}`)
       .then(r => r.json())
       .then(d => {
-        setLicitaciones(d.licitaciones || d.data || [])
-        setTotal(d.total || d.pagination?.total || 0)
+        setLicitaciones(d.licitaciones || [])
+        setTotal(d.paginacion?.total || 0)
         setLoading(false)
       })
       .catch(e => { setError(e.message); setLoading(false) })
@@ -71,22 +71,25 @@ export default function Licitaciones() {
               <div key={l._id || i} className="bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-gray-700 transition-colors">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-blue-400 mb-1">{l.numeroProceso || l.numero || l.id_proceso || 'Sin número'}</p>
-                    <p className="text-sm text-gray-200 line-clamp-2">{l.descripcion || l.titulo || l.objeto || 'Sin descripción'}</p>
+                    <p className="text-sm font-medium text-blue-400 mb-1">{l.numeroProceso || 'Sin número'}</p>
+                    <p className="text-sm text-gray-200 line-clamp-2">{l.titulo || l.objeto || l.descripcion || 'Sin descripción'}</p>
                   </div>
                   {l.estado && (
                     <span className="text-xs px-2.5 py-1 rounded-full bg-gray-800 text-gray-400 whitespace-nowrap">{l.estado}</span>
                   )}
                 </div>
                 <div className="flex flex-wrap gap-4 mt-3 text-xs text-gray-500">
-                  {(l.entidadContratante || l.institucion) && (
-                    <span className="flex items-center gap-1"><Building2 className="w-3 h-3" /> {l.entidadContratante || l.institucion}</span>
+                  {l.entidadEmisora && (
+                    <span className="flex items-center gap-1"><Building2 className="w-3 h-3" /> {l.entidadEmisora}</span>
                   )}
-                  {(l.fechaPublicacion || l.fecha_publicacion) && (
-                    <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {new Date(l.fechaPublicacion || l.fecha_publicacion).toLocaleDateString('es')}</span>
+                  {l.tipoProceso && (
+                    <span className="flex items-center gap-1"><Tag className="w-3 h-3" /> {l.tipoProceso}</span>
                   )}
-                  {l.montoEstimado && (
-                    <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" /> {typeof l.montoEstimado === 'number' ? l.montoEstimado.toLocaleString('es', { style: 'currency', currency: 'CRC' }) : l.montoEstimado}</span>
+                  {l.fechaCierre && (
+                    <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> Cierre: {new Date(l.fechaCierre).toLocaleDateString('es')}</span>
+                  )}
+                  {(l.montoTexto || l.monto) && (
+                    <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" /> {l.montoTexto || l.monto}</span>
                   )}
                 </div>
               </div>
