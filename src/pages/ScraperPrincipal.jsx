@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react'
-import { Play, Loader2, CheckCircle2, XCircle, Clock, Server, Search, Bell, Calendar, Star, FileText, Download, BarChart3, Hash, Database, RefreshCw, Activity } from 'lucide-react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
+import { Play, Loader2, CheckCircle2, XCircle, Clock, Server, Search, Bell, Calendar, Star, FileText, Download, BarChart3, Hash, Database, RefreshCw, Activity, Terminal, ChevronDown, ChevronUp } from 'lucide-react'
 
 const SCRAPER_URL = 'https://web-production-0dbf.up.railway.app'
 
@@ -330,7 +330,100 @@ export default function ScraperPrincipal() {
               <ScraperCard key={s.id} scraper={s} serverStatus={serverStatus} />
             ))}
           </div>
+
+          {/* Live Logs */}
+          <LogsPanel />
         </>
+      )}
+    </div>
+  )
+}
+
+function LogsPanel() {
+  const [logs, setLogs] = useState([])
+  const [open, setOpen] = useState(false)
+  const [autoScroll, setAutoScroll] = useState(true)
+  const [filter, setFilter] = useState('')
+  const logRef = useRef(null)
+  const intervalRef = useRef(null)
+
+  const fetchLogs = useCallback(() => {
+    fetch(`${SCRAPER_URL}/api/scrapers/logs?limit=100`)
+      .then(r => r.json())
+      .then(d => { if (Array.isArray(d)) setLogs(d) })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (open) {
+      fetchLogs()
+      intervalRef.current = setInterval(fetchLogs, 5000)
+      return () => clearInterval(intervalRef.current)
+    } else {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+    }
+  }, [open, fetchLogs])
+
+  useEffect(() => {
+    if (autoScroll && logRef.current) {
+      logRef.current.scrollTop = logRef.current.scrollHeight
+    }
+  }, [logs, autoScroll])
+
+  const filteredLogs = filter
+    ? logs.filter(l => l.toLowerCase().includes(filter.toLowerCase()))
+    : logs
+
+  const getLogColor = (line) => {
+    if (line.includes('[ERROR]') || line.includes('❌')) return 'text-red-400'
+    if (line.includes('[WARN]') || line.includes('⚠')) return 'text-amber-400'
+    if (line.includes('✅')) return 'text-green-400'
+    if (line.includes('📊') || line.includes('📋')) return 'text-blue-400'
+    return 'text-gray-400'
+  }
+
+  return (
+    <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full px-5 py-4 flex items-center gap-3 hover:bg-gray-800/30 transition-colors"
+      >
+        <Terminal className="w-5 h-5 text-green-400" />
+        <span className="text-sm font-semibold text-white flex-1 text-left">Logs del Servidor</span>
+        <span className="text-xs text-gray-500">{logs.length} líneas</span>
+        {open ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
+      </button>
+
+      {open && (
+        <div className="border-t border-gray-800">
+          <div className="px-4 py-2 flex items-center gap-2 border-b border-gray-800/50">
+            <Search className="w-3.5 h-3.5 text-gray-500" />
+            <input
+              type="text"
+              placeholder="Filtrar logs..."
+              value={filter}
+              onChange={e => setFilter(e.target.value)}
+              className="flex-1 bg-transparent text-xs text-white placeholder-gray-600 outline-none"
+            />
+            <label className="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer">
+              <input type="checkbox" checked={autoScroll} onChange={e => setAutoScroll(e.target.checked)} className="w-3 h-3 rounded" />
+              Auto-scroll
+            </label>
+            <button onClick={fetchLogs} className="text-xs text-gray-500 hover:text-white">
+              <RefreshCw className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <div ref={logRef} className="h-80 overflow-y-auto p-4 font-mono text-xs space-y-0.5">
+            {filteredLogs.length === 0 && (
+              <p className="text-gray-600 text-center py-8">Sin logs disponibles</p>
+            )}
+            {filteredLogs.map((line, i) => (
+              <div key={i} className={`${getLogColor(line)} leading-relaxed break-all`}>
+                {line}
+              </div>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   )
