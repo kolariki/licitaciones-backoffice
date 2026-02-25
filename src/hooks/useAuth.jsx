@@ -37,7 +37,7 @@ export function AuthProvider({ children }) {
   }, [token])
 
   const login = async (email, password) => {
-    const res = await fetch(`${API_URL}/api/usuarios/login`, {
+    const res = await fetch(`${API_URL}/api/usuarios/login/costa-rica`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
