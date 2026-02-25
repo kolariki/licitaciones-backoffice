@@ -2,6 +2,11 @@ import React, { useState, useEffect } from 'react'
 import { FileText, Search, ExternalLink, Calendar, Building2, DollarSign, Tag, Bell, ChevronDown, ChevronUp, Mail, Clock } from 'lucide-react'
 import { API_URL } from '../config'
 
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('bo_token')
+  return token ? { 'x-auth-token': token } : {}
+}
+
 export default function Licitaciones() {
   const [licitaciones, setLicitaciones] = useState([])
   const [loading, setLoading] = useState(true)
@@ -32,7 +37,9 @@ export default function Licitaciones() {
     const params = new URLSearchParams({ page: p, limit: 20 })
     if (q) params.set('search', q)
     try {
-      const res = await fetch(`${API_URL}/api/dashboard/licitaciones-cr?${params}`)
+      const res = await fetch(`${API_URL}/api/licitaciones-costa-rica/licitaciones?${params}`, {
+        headers: getAuthHeaders()
+      })
       const d = await res.json()
       const lics = d.licitaciones || []
       setLicitaciones(lics)
