@@ -32,7 +32,7 @@ export default function Licitaciones() {
     const params = new URLSearchParams({ page: p, limit: 20 })
     if (q) params.set('search', q)
     try {
-      const res = await fetch(`${API_URL}/api/v2/licitaciones?${params}`)
+      const res = await fetch(`${API_URL}/api/dashboard/licitaciones-cr?${params}`)
       const d = await res.json()
       const lics = d.licitaciones || []
       setLicitaciones(lics)
