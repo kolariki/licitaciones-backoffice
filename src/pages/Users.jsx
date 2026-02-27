@@ -27,7 +27,7 @@ export default function UsersPage() {
     .filter(u => {
       if (search) {
         const s = search.toLowerCase()
-        if (!u.nombre?.toLowerCase().includes(s) && !u.email?.toLowerCase().includes(s)) return false
+        if (!u.nombre?.toLowerCase().includes(s) && !u.email?.toLowerCase().includes(s) && !(u.cedulaEmpresa || '').toLowerCase().includes(s)) return false
       }
       if (filterPlan !== 'all') {
         const isPremium = u.nivelSuscripcion === 'premium' || u.rol === 'premium'
@@ -112,6 +112,9 @@ export default function UsersPage() {
                         <div>
                           <p className="text-sm font-medium">{u.nombre}</p>
                           <p className="text-xs text-gray-500">{u.email}</p>
+                          {u.cedulaEmpresa && (
+                            <p className="text-xs text-gray-600 font-mono mt-0.5">Cédula: {u.cedulaEmpresa}</p>
+                          )}
                         </div>
                       </div>
                     </td>
