@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Mail, MapPin, Crown, Bell, Calendar, Edit, Save, X, Trash2, Clock, Plus, Search, Tag, ToggleLeft, ToggleRight, AlertTriangle, CheckCircle, XCircle } from 'lucide-react'
+import { ArrowLeft, Mail, MapPin, Crown, Bell, Calendar, Edit, Save, X, Trash2, Clock, Plus, Search, Tag, ToggleLeft, ToggleRight, AlertTriangle, CheckCircle, XCircle, Copy, Check } from 'lucide-react'
 import { API_URL } from '../config'
 
 // Toast component
@@ -38,6 +38,7 @@ export default function UserDetail() {
 
   // Toasts
   const [toasts, setToasts] = useState([])
+  const [copied, setCopied] = useState(null)
   const addToast = useCallback((type, text) => {
     const id = Date.now()
     setToasts(prev => [...prev, { id, type, text }])
@@ -444,9 +445,19 @@ export default function UserDetail() {
                 ) : (
                   <h2 className="text-xl font-bold">{user.nombre}</h2>
                 )}
-                <p className="text-gray-400 flex items-center gap-1.5 mt-1"><Mail className="w-3.5 h-3.5" /> {user.email}</p>
+                <p className="text-gray-400 flex items-center gap-1.5 mt-1">
+                  <Mail className="w-3.5 h-3.5" /> {user.email}
+                  <button onClick={() => { navigator.clipboard.writeText(user.email); setCopied('email'); setTimeout(() => setCopied(null), 1500) }} className="ml-1 p-0.5 rounded hover:bg-white/10 transition-colors" title="Copiar email">
+                    {copied === 'email' ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5 text-gray-500 hover:text-gray-300" />}
+                  </button>
+                </p>
                 {(user.cedulaEmpresa || user.entidad) && (
-                  <p className="text-gray-500 flex items-center gap-1.5 mt-1 font-mono text-sm">Cédula: {user.cedulaEmpresa || user.entidad}</p>
+                  <p className="text-gray-500 flex items-center gap-1.5 mt-1 font-mono text-sm">
+                    Cédula: {user.cedulaEmpresa || user.entidad}
+                    <button onClick={() => { navigator.clipboard.writeText(user.cedulaEmpresa || user.entidad); setCopied('cedula'); setTimeout(() => setCopied(null), 1500) }} className="ml-1 p-0.5 rounded hover:bg-white/10 transition-colors" title="Copiar cédula">
+                      {copied === 'cedula' ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5 text-gray-500 hover:text-gray-300" />}
+                    </button>
+                  </p>
                 )}
               </div>
             </div>
