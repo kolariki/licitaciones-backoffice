@@ -445,6 +445,9 @@ export default function UserDetail() {
                   <h2 className="text-xl font-bold">{user.nombre}</h2>
                 )}
                 <p className="text-gray-400 flex items-center gap-1.5 mt-1"><Mail className="w-3.5 h-3.5" /> {user.email}</p>
+                {(user.cedulaEmpresa || user.entidad) && (
+                  <p className="text-gray-500 flex items-center gap-1.5 mt-1 font-mono text-sm">Cédula: {user.cedulaEmpresa || user.entidad}</p>
+                )}
               </div>
             </div>
             <div className="flex gap-2">
