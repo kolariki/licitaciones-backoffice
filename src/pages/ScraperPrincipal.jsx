@@ -175,6 +175,7 @@ function ScraperCard({ scraper, serverStatus }) {
   const [runningExtra, setRunningExtra] = useState(false)
   const [result, setResult] = useState(null)
   const [resultExtra, setResultExtra] = useState(null)
+  const [maxPages, setMaxPages] = useState(5)
 
   const status = scraper.statusKey ? serverStatus?.scrapers?.[scraper.statusKey] : null
   const Icon = scraper.icon
@@ -185,7 +186,12 @@ function ScraperCard({ scraper, serverStatus }) {
     setR(true)
     setRes(null)
     try {
-      const r = await fetch(`${SCRAPER_URL}${endpoint}`, { method: 'POST' })
+      const body = scraper.id === 'principal' && !isExtra ? JSON.stringify({ maxPages }) : undefined
+      const r = await fetch(`${SCRAPER_URL}${endpoint}`, { 
+        method: 'POST',
+        headers: body ? { 'Content-Type': 'application/json' } : {},
+        body 
+      })
       const d = await r.json()
       setRes({ success: d.success !== false, message: d.message || (d.success !== false ? 'Ejecutado correctamente' : 'Error') })
     } catch (e) {
@@ -245,6 +251,13 @@ function ScraperCard({ scraper, serverStatus }) {
               </div>
             )}
 
+            {scraper.id === 'principal' && (
+              <div className="flex items-center gap-2 mb-2">
+                <label className="text-xs text-gray-400">Páginas:</label>
+                <input type="number" min={1} max={100} value={maxPages} onChange={e => setMaxPages(parseInt(e.target.value) || 5)}
+                  className="w-16 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white text-center" />
+              </div>
+            )}
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => execute(scraper.endpoint)}
@@ -394,9 +407,22 @@ export default function ScraperPrincipal() {
           <h1 className="text-2xl font-bold">Scraper Principal</h1>
           <p className="text-gray-400 text-sm mt-1">Panel de control del servidor de scraping SICOP</p>
         </div>
-        <button onClick={fetchStatus} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-300 bg-gray-800 hover:bg-gray-700 border border-gray-700 transition-colors">
-          <RefreshCw className="w-3.5 h-3.5" /> Refrescar
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={fetchStatus} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-300 bg-gray-800 hover:bg-gray-700 border border-gray-700 transition-colors">
+            <RefreshCw className="w-3.5 h-3.5" /> Refrescar
+          </button>
+          <button onClick={async () => {
+            if (!window.confirm('¿Reiniciar todos los scrapers? Esto libera procesos trabados.')) return
+            try {
+              const r = await fetch(`${SCRAPER_URL}/api/scrapers/reset`, { method: 'POST' })
+              const d = await r.json()
+              alert(d.message || 'Reiniciado')
+              fetchStatus()
+            } catch(e) { alert('Error: ' + e.message) }
+          }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-red-300 bg-red-900/30 hover:bg-red-900/50 border border-red-700 transition-colors">
+            <Zap className="w-3.5 h-3.5" /> Reset Scrapers
+          </button>
+        </div>
       </div>
 
       {error && <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-lg p-3">{error}</p>}
