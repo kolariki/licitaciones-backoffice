@@ -175,7 +175,7 @@ function ScraperCard({ scraper, serverStatus }) {
   const [runningExtra, setRunningExtra] = useState(false)
   const [result, setResult] = useState(null)
   const [resultExtra, setResultExtra] = useState(null)
-  const [maxPages, setMaxPages] = useState(5)
+  const [maxPages, setMaxPages] = useState(scraper.id === 'faltantes' ? 25 : 5)
 
   const status = scraper.statusKey ? serverStatus?.scrapers?.[scraper.statusKey] : null
   const Icon = scraper.icon
@@ -186,7 +186,7 @@ function ScraperCard({ scraper, serverStatus }) {
     setR(true)
     setRes(null)
     try {
-      const body = scraper.id === 'principal' && !isExtra ? JSON.stringify({ maxPages }) : undefined
+      const body = (scraper.id === 'principal' || scraper.id === 'faltantes') && !isExtra ? JSON.stringify({ maxPages }) : undefined
       const r = await fetch(`${SCRAPER_URL}${endpoint}`, { 
         method: 'POST',
         headers: body ? { 'Content-Type': 'application/json' } : {},
@@ -251,10 +251,10 @@ function ScraperCard({ scraper, serverStatus }) {
               </div>
             )}
 
-            {scraper.id === 'principal' && (
+            {(scraper.id === 'principal' || scraper.id === 'faltantes') && (
               <div className="flex items-center gap-2 mb-2">
                 <label className="text-xs text-gray-400">Páginas:</label>
-                <input type="number" min={1} max={100} value={maxPages} onChange={e => setMaxPages(parseInt(e.target.value) || 5)}
+                <input type="number" min={1} max={100} value={maxPages} onChange={e => setMaxPages(parseInt(e.target.value) || (scraper.id === 'principal' ? 5 : 25))}
                   className="w-16 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white text-center" />
               </div>
             )}
