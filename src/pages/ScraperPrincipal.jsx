@@ -121,6 +121,16 @@ const SCRAPERS = [
     color: 'violet'
   },
   {
+    id: 'clasificacionProductos',
+    name: 'Buscar Clasificación de Productos Faltantes',
+    desc: 'Busca en productos_sicop los que no tienen match en codigos_clasificacion y los busca en SICOP.',
+    icon: Search,
+    features: ['Detecta prefijos sin código de clasificación', 'Busca automáticamente en SICOP con Puppeteer', 'Inserta códigos encontrados en la BD', 'Progreso en tiempo real'],
+    endpoint: '/api/codigos/buscar-clasificacion-faltantes',
+    statusEndpoint: '/api/codigos/buscar-clasificacion-faltantes/status',
+    color: 'rose'
+  },
+  {
     id: 'completarDatos',
     name: 'Completar Datos de Licitaciones Incompletas',
     desc: 'Busca licitaciones con datos faltantes y las completa consultando SICOP directamente vía proxy.',
@@ -152,6 +162,7 @@ const colorMap = {
   pink: 'bg-pink-600/20 text-pink-400 border-pink-500/30',
   violet: 'bg-violet-600/20 text-violet-400 border-violet-500/30',
   lime: 'bg-lime-600/20 text-lime-400 border-lime-500/30',
+  rose: 'bg-rose-600/20 text-rose-400 border-rose-500/30',
 }
 
 const btnColorMap = {
@@ -168,6 +179,7 @@ const btnColorMap = {
   pink: 'bg-pink-600 hover:bg-pink-700',
   violet: 'bg-violet-600 hover:bg-violet-700',
   lime: 'bg-lime-600 hover:bg-lime-700',
+  rose: 'bg-rose-600 hover:bg-rose-700',
 }
 
 function ScraperCard({ scraper, serverStatus }) {
