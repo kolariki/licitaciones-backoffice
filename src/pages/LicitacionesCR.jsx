@@ -23,12 +23,12 @@ export default function LicitacionesCR() {
       if (q) params.set('search', q)
       if (estado) params.set('estado', estado)
       if (tipo) params.set('tipoProceso', tipo)
-      const res = await fetch(`${API_URL}/api/v2/licitaciones?${params}`)
+      const res = await fetch(`${API_URL}/api/dashboard/licitaciones-cr?${params}`)
       const d = await res.json()
       setLicitaciones(d.licitaciones || [])
       const pag = d.paginacion || {}
       setTotal(pag.total || 0)
-      setTotalPages(pag.totalPaginas || 1)
+      setTotalPages(pag.totalPages || pag.totalPaginas || Math.ceil((pag.total || 0) / limit))
     } catch (e) {
       setError(e.message)
     }
@@ -245,6 +245,14 @@ export default function LicitacionesCR() {
                                 <div className="mb-6">
                                   <h3 className="text-sm font-bold text-gray-400 mb-2">DESCRIPCIÓN</h3>
                                   <p className="text-gray-200 text-sm bg-gray-800/50 rounded-lg p-3 whitespace-pre-wrap">{lic.descripcion}</p>
+                                </div>
+                              )}
+
+                              {/* Monto texto */}
+                              {lic.montoTexto && (
+                                <div className="mb-6">
+                                  <h3 className="text-sm font-bold text-gray-400 mb-2">MONTO</h3>
+                                  <p className="text-green-400 font-bold text-lg bg-gray-800/50 rounded-lg p-3">{lic.montoTexto}</p>
                                 </div>
                               )}
 
