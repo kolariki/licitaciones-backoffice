@@ -13,6 +13,8 @@ export default function LicitacionesCR() {
   const [error, setError] = useState(null)
   const [estadoFilter, setEstadoFilter] = useState('')
   const [tipoFilter, setTipoFilter] = useState('')
+  const [detailCache, setDetailCache] = useState({})
+  const [loadingDetail, setLoadingDetail] = useState(null)
   const limit = 25
 
   const fetchData = async (p = 1, q = '', estado = '', tipo = '') => {
@@ -36,6 +38,30 @@ export default function LicitacionesCR() {
   }
 
   useEffect(() => { fetchData(page, search, estadoFilter, tipoFilter) }, [page])
+
+  const fetchDetail = async (numeroProceso) => {
+    if (detailCache[numeroProceso]) return
+    setLoadingDetail(numeroProceso)
+    try {
+      const res = await fetch(`${API_URL}/api/dashboard/licitaciones-cr/${encodeURIComponent(numeroProceso)}`)
+      const d = await res.json()
+      if (d.success && d.licitacion) {
+        setDetailCache(prev => ({ ...prev, [numeroProceso]: d.licitacion }))
+      }
+    } catch (e) {
+      console.error('Error fetching detail:', e)
+    }
+    setLoadingDetail(null)
+  }
+
+  const toggleExpand = (i, numeroProceso) => {
+    if (expanded === i) {
+      setExpanded(null)
+    } else {
+      setExpanded(i)
+      fetchDetail(numeroProceso)
+    }
+  }
 
   const handleSearch = (e) => {
     e.preventDefault()
@@ -176,7 +202,7 @@ export default function LicitacionesCR() {
                   {licitaciones.map((lic, i) => (
                     <React.Fragment key={lic._id || i}>
                       <tr
-                        onClick={() => setExpanded(expanded === i ? null : i)}
+                        onClick={() => toggleExpand(i, lic.numeroProceso)}
                         className={`border-b border-gray-800/50 cursor-pointer transition-colors ${expanded === i ? 'bg-cyan-900/10' : 'hover:bg-gray-800/50'}`}
                       >
                         <td className="px-4 py-3">
@@ -198,6 +224,14 @@ export default function LicitacionesCR() {
                       {expanded === i && (
                         <tr>
                           <td colSpan={8} className="px-0 py-0">
+                            {loadingDetail === lic.numeroProceso ? (
+                              <div className="flex items-center justify-center py-10 gap-3">
+                                <div className="w-5 h-5 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
+                                <span className="text-gray-400 text-sm">Cargando datos completos...</span>
+                              </div>
+                            ) : (() => {
+                              const detail = detailCache[lic.numeroProceso] || lic
+                              return (
                             <div className="bg-gray-900/80 border-t border-b border-cyan-500/20 p-6">
                               {/* Header */}
                               <div className="grid md:grid-cols-2 gap-6 mb-6">
@@ -206,14 +240,14 @@ export default function LicitacionesCR() {
                                     <FileText size={18} className="text-cyan-400" /> Datos Generales
                                   </h3>
                                   <div className="space-y-2 text-sm">
-                                    <div className="flex gap-2"><Hash size={14} className="text-gray-500 mt-0.5 shrink-0" /><span className="text-gray-500 w-36 shrink-0">Número:</span><span className="text-cyan-400 font-mono">{lic.numeroProceso}</span></div>
-                                    {lic.numeroExpediente && <div className="flex gap-2"><Hash size={14} className="text-gray-500 mt-0.5 shrink-0" /><span className="text-gray-500 w-36 shrink-0">Expediente:</span><span className="text-gray-200">{lic.numeroExpediente}</span></div>}
-                                    <div className="flex gap-2"><Building2 size={14} className="text-gray-500 mt-0.5 shrink-0" /><span className="text-gray-500 w-36 shrink-0">Entidad:</span><span className="text-gray-200">{lic.entidadEmisora}</span></div>
-                                    {lic.unidadOperativa && <div className="flex gap-2"><Building2 size={14} className="text-gray-500 mt-0.5 shrink-0" /><span className="text-gray-500 w-36 shrink-0">Unidad:</span><span className="text-gray-200">{lic.unidadOperativa}</span></div>}
-                                    {lic.provincia && <div className="flex gap-2"><MapPin size={14} className="text-gray-500 mt-0.5 shrink-0" /><span className="text-gray-500 w-36 shrink-0">Provincia:</span><span className="text-gray-200">{lic.provincia}</span></div>}
-                                    <div className="flex gap-2"><Tag size={14} className="text-gray-500 mt-0.5 shrink-0" /><span className="text-gray-500 w-36 shrink-0">Tipo:</span><span className="text-gray-200">{lic.tipoProceso}</span></div>
-                                    {lic.modalidad && <div className="flex gap-2"><Tag size={14} className="text-gray-500 mt-0.5 shrink-0" /><span className="text-gray-500 w-36 shrink-0">Modalidad:</span><span className="text-gray-200">{lic.modalidad}</span></div>}
-                                    {lic.procedimientoSeleccion && <div className="flex gap-2"><Tag size={14} className="text-gray-500 mt-0.5 shrink-0" /><span className="text-gray-500 w-36 shrink-0">Procedimiento:</span><span className="text-gray-200">{lic.procedimientoSeleccion}</span></div>}
+                                    <div className="flex gap-2"><Hash size={14} className="text-gray-500 mt-0.5 shrink-0" /><span className="text-gray-500 w-36 shrink-0">Número:</span><span className="text-cyan-400 font-mono">{detail.numeroProceso}</span></div>
+                                    {detail.numeroExpediente && <div className="flex gap-2"><Hash size={14} className="text-gray-500 mt-0.5 shrink-0" /><span className="text-gray-500 w-36 shrink-0">Expediente:</span><span className="text-gray-200">{detail.numeroExpediente}</span></div>}
+                                    <div className="flex gap-2"><Building2 size={14} className="text-gray-500 mt-0.5 shrink-0" /><span className="text-gray-500 w-36 shrink-0">Entidad:</span><span className="text-gray-200">{detail.entidadEmisora}</span></div>
+                                    {detail.unidadOperativa && <div className="flex gap-2"><Building2 size={14} className="text-gray-500 mt-0.5 shrink-0" /><span className="text-gray-500 w-36 shrink-0">Unidad:</span><span className="text-gray-200">{detail.unidadOperativa}</span></div>}
+                                    {detail.provincia && <div className="flex gap-2"><MapPin size={14} className="text-gray-500 mt-0.5 shrink-0" /><span className="text-gray-500 w-36 shrink-0">Provincia:</span><span className="text-gray-200">{detail.provincia}</span></div>}
+                                    <div className="flex gap-2"><Tag size={14} className="text-gray-500 mt-0.5 shrink-0" /><span className="text-gray-500 w-36 shrink-0">Tipo:</span><span className="text-gray-200">{detail.tipoProceso}</span></div>
+                                    {detail.modalidad && <div className="flex gap-2"><Tag size={14} className="text-gray-500 mt-0.5 shrink-0" /><span className="text-gray-500 w-36 shrink-0">Modalidad:</span><span className="text-gray-200">{detail.modalidad}</span></div>}
+                                    {detail.procedimientoSeleccion && <div className="flex gap-2"><Tag size={14} className="text-gray-500 mt-0.5 shrink-0" /><span className="text-gray-500 w-36 shrink-0">Procedimiento:</span><span className="text-gray-200">{detail.procedimientoSeleccion}</span></div>}
                                   </div>
                                 </div>
                                 <div>
@@ -223,45 +257,45 @@ export default function LicitacionesCR() {
                                   <div className="space-y-2 text-sm">
                                     <div className="flex gap-2"><Calendar size={14} className="text-gray-500 mt-0.5 shrink-0" /><span className="text-gray-500 w-36 shrink-0">Publicación:</span><span className="text-yellow-400">{formatDate(lic.fechaPublicacion)}</span></div>
                                     <div className="flex gap-2"><Calendar size={14} className="text-gray-500 mt-0.5 shrink-0" /><span className="text-gray-500 w-36 shrink-0">Cierre:</span><span className="text-yellow-400">{formatDate(lic.fechaCierre)}</span></div>
-                                    {lic.fechaApertura && <div className="flex gap-2"><Calendar size={14} className="text-gray-500 mt-0.5 shrink-0" /><span className="text-gray-500 w-36 shrink-0">Apertura:</span><span className="text-yellow-400">{formatDate(lic.fechaApertura)}</span></div>}
-                                    {lic.fechaInicioContrato && <div className="flex gap-2"><Calendar size={14} className="text-gray-500 mt-0.5 shrink-0" /><span className="text-gray-500 w-36 shrink-0">Inicio Contrato:</span><span className="text-yellow-400">{formatDate(lic.fechaInicioContrato)}</span></div>}
+                                    {detail.fechaApertura && <div className="flex gap-2"><Calendar size={14} className="text-gray-500 mt-0.5 shrink-0" /><span className="text-gray-500 w-36 shrink-0">Apertura:</span><span className="text-yellow-400">{formatDate(lic.fechaApertura)}</span></div>}
+                                    {detail.fechaInicioContrato && <div className="flex gap-2"><Calendar size={14} className="text-gray-500 mt-0.5 shrink-0" /><span className="text-gray-500 w-36 shrink-0">Inicio Contrato:</span><span className="text-yellow-400">{formatDate(lic.fechaInicioContrato)}</span></div>}
                                     <div className="flex gap-2"><DollarSign size={14} className="text-gray-500 mt-0.5 shrink-0" /><span className="text-gray-500 w-36 shrink-0">Monto:</span><span className="text-green-400 font-bold">{formatMonto(lic.monto, lic.moneda)}</span></div>
-                                    {lic.presupuestoOficial && <div className="flex gap-2"><DollarSign size={14} className="text-gray-500 mt-0.5 shrink-0" /><span className="text-gray-500 w-36 shrink-0">Presupuesto Oficial:</span><span className="text-green-400">{formatMonto(lic.presupuestoOficial, lic.moneda)}</span></div>}
-                                    {lic.duracionContrato && <div className="flex gap-2"><Clock size={14} className="text-gray-500 mt-0.5 shrink-0" /><span className="text-gray-500 w-36 shrink-0">Duración:</span><span className="text-gray-200">{lic.duracionContrato}</span></div>}
+                                    {detail.presupuestoOficial && <div className="flex gap-2"><DollarSign size={14} className="text-gray-500 mt-0.5 shrink-0" /><span className="text-gray-500 w-36 shrink-0">Presupuesto Oficial:</span><span className="text-green-400">{formatMonto(lic.presupuestoOficial, lic.moneda)}</span></div>}
+                                    {detail.duracionContrato && <div className="flex gap-2"><Clock size={14} className="text-gray-500 mt-0.5 shrink-0" /><span className="text-gray-500 w-36 shrink-0">Duración:</span><span className="text-gray-200">{detail.duracionContrato}</span></div>}
                                   </div>
                                 </div>
                               </div>
 
                               {/* Objeto */}
-                              {lic.objeto && (
+                              {detail.objeto && (
                                 <div className="mb-6">
                                   <h3 className="text-sm font-bold text-gray-400 mb-2">OBJETO</h3>
-                                  <p className="text-gray-200 text-sm bg-gray-800/50 rounded-lg p-3">{lic.objeto}</p>
+                                  <p className="text-gray-200 text-sm bg-gray-800/50 rounded-lg p-3">{detail.objeto}</p>
                                 </div>
                               )}
 
                               {/* Descripción */}
-                              {lic.descripcion && lic.descripcion !== lic.objeto && (
+                              {detail.descripcion && detail.descripcion !== detail.objeto && (
                                 <div className="mb-6">
                                   <h3 className="text-sm font-bold text-gray-400 mb-2">DESCRIPCIÓN</h3>
-                                  <p className="text-gray-200 text-sm bg-gray-800/50 rounded-lg p-3 whitespace-pre-wrap">{lic.descripcion}</p>
+                                  <p className="text-gray-200 text-sm bg-gray-800/50 rounded-lg p-3 whitespace-pre-wrap">{detail.descripcion}</p>
                                 </div>
                               )}
 
                               {/* Monto texto */}
-                              {lic.montoTexto && (
+                              {detail.montoTexto && (
                                 <div className="mb-6">
                                   <h3 className="text-sm font-bold text-gray-400 mb-2">MONTO</h3>
-                                  <p className="text-green-400 font-bold text-lg bg-gray-800/50 rounded-lg p-3">{lic.montoTexto}</p>
+                                  <p className="text-green-400 font-bold text-lg bg-gray-800/50 rounded-lg p-3">{detail.montoTexto}</p>
                                 </div>
                               )}
 
                               {/* Garantías */}
-                              {lic.garantias && Object.keys(lic.garantias).length > 0 && (
+                              {detail.garantias && Object.keys(detail.garantias).length > 0 && (
                                 <div className="mb-6">
                                   <h3 className="text-sm font-bold text-gray-400 mb-2 flex items-center gap-2"><Shield size={14} /> GARANTÍAS</h3>
                                   <div className="bg-gray-800/50 rounded-lg p-3 space-y-2">
-                                    {Object.entries(lic.garantias).filter(([k]) => k !== '_id').map(([key, val]) => (
+                                    {Object.entries(detail.garantias).filter(([k]) => k !== '_id').map(([key, val]) => (
                                       <div key={key} className="text-sm">
                                         <span className="text-cyan-400 font-medium capitalize">{key}:</span>{' '}
                                         <span className="text-gray-200">{val}</span>
@@ -272,9 +306,9 @@ export default function LicitacionesCR() {
                               )}
 
                               {/* Productos */}
-                              {lic.productos && lic.productos.length > 0 && (
+                              {detail.productos && detail.productos.length > 0 && (
                                 <div className="mb-6">
-                                  <h3 className="text-sm font-bold text-gray-400 mb-2 flex items-center gap-2"><Package size={14} /> PRODUCTOS ({lic.productos.length})</h3>
+                                  <h3 className="text-sm font-bold text-gray-400 mb-2 flex items-center gap-2"><Package size={14} /> PRODUCTOS ({detail.productos.length})</h3>
                                   <div className="bg-gray-800/50 rounded-lg overflow-hidden">
                                     <table className="w-full text-xs">
                                       <thead>
@@ -285,15 +319,15 @@ export default function LicitacionesCR() {
                                         </tr>
                                       </thead>
                                       <tbody>
-                                        {lic.productos.slice(0, 50).map((p, pi) => (
+                                        {detail.productos.slice(0, 50).map((p, pi) => (
                                           <tr key={pi} className="border-b border-gray-700/50">
                                             <td className="px-3 py-2 text-gray-500">{p.numero || pi + 1}</td>
                                             <td className="px-3 py-2 text-gray-200">{p.descripcion}</td>
                                             <td className="px-3 py-2 text-blue-400 whitespace-nowrap">{p.cantidad}</td>
                                           </tr>
                                         ))}
-                                        {lic.productos.length > 50 && (
-                                          <tr><td colSpan={3} className="px-3 py-2 text-gray-500 text-center">... y {lic.productos.length - 50} productos más</td></tr>
+                                        {detail.productos.length > 50 && (
+                                          <tr><td colSpan={3} className="px-3 py-2 text-gray-500 text-center">... y {detail.productos.length - 50} productos más</td></tr>
                                         )}
                                       </tbody>
                                     </table>
@@ -302,31 +336,33 @@ export default function LicitacionesCR() {
                               )}
 
                               {/* Datos Específicos */}
-                              {lic.datosEspecificos && Object.keys(lic.datosEspecificos).length > 0 && (
+                              {detail.datosEspecificos && Object.keys(detail.datosEspecificos).length > 0 && (
                                 <div className="mb-6">
                                   <h3 className="text-sm font-bold text-gray-400 mb-2 flex items-center gap-2"><Database size={14} /> DATOS ESPECÍFICOS</h3>
                                   <div className="bg-gray-800/50 rounded-lg p-4 max-h-[600px] overflow-y-auto text-xs">
-                                    {renderObject(lic.datosEspecificos)}
+                                    {renderObject(detail.datosEspecificos)}
                                   </div>
                                 </div>
                               )}
 
                               {/* Links */}
                               <div className="flex gap-3 flex-wrap">
-                                {lic.urlDetalle && (
-                                  <a href={lic.urlDetalle} target="_blank" rel="noopener noreferrer"
+                                {detail.urlDetalle && (
+                                  <a href={detail.urlDetalle} target="_blank" rel="noopener noreferrer"
                                     className="px-4 py-2 bg-cyan-600/20 border border-cyan-500/30 rounded-lg text-cyan-400 text-sm hover:bg-cyan-600/30 transition-colors flex items-center gap-2">
                                     <ExternalLink size={14} /> Ver en SICOP
                                   </a>
                                 )}
-                                {lic.urlPliego && (
-                                  <a href={lic.urlPliego} target="_blank" rel="noopener noreferrer"
+                                {detail.urlPliego && (
+                                  <a href={detail.urlPliego} target="_blank" rel="noopener noreferrer"
                                     className="px-4 py-2 bg-purple-600/20 border border-purple-500/30 rounded-lg text-purple-400 text-sm hover:bg-purple-600/30 transition-colors flex items-center gap-2">
                                     <FileText size={14} /> Ver Pliego
                                   </a>
                                 )}
                               </div>
                             </div>
+                              )
+                            })()}
                           </td>
                         </tr>
                       )}
