@@ -1,6 +1,6 @@
 import React from 'react'
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom'
-import { LayoutDashboard, Users, Bell, BarChart3, FileText, Menu, Layers, Send, LogOut, MailCheck, Server, Eye } from 'lucide-react'
+import { LayoutDashboard, Users, Bell, BarChart3, FileText, Menu, Layers, Send, LogOut, MailCheck, Server, Eye, Database } from 'lucide-react'
 import { AuthProvider, useAuth } from './hooks/useAuth'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
@@ -13,6 +13,7 @@ import Recomendaciones from './pages/Recomendaciones'
 import AlertasEnviadas from './pages/AlertasEnviadas'
 import ScraperPrincipal from './pages/ScraperPrincipal'
 import PreviewAlertas from './pages/PreviewAlertas'
+import LicitacionesCR from './pages/LicitacionesCR'
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -24,6 +25,7 @@ const navItems = [
   { to: '/alertas-enviadas', icon: MailCheck, label: 'Alertas Enviadas' },
   { to: '/scraper', icon: Server, label: 'Scraper Principal' },
   { to: '/preview-alertas', icon: Eye, label: 'Preview Alertas' },
+  { to: '/licitaciones-cr', icon: Database, label: 'BD Licitaciones CR' },
 ]
 
 function Sidebar({ open, setOpen, alertsPending, onDismissAlerts }) {
@@ -123,6 +125,7 @@ function ProtectedApp() {
             <Route path="/alertas-enviadas" element={<AlertasEnviadas />} />
             <Route path="/scraper" element={<ScraperPrincipal />} />
             <Route path="/preview-alertas" element={<PreviewAlertas />} />
+            <Route path="/licitaciones-cr" element={<LicitacionesCR />} />
           </Routes>
         </main>
       </div>
