@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Database, Search, ChevronDown, ChevronUp, ExternalLink, Calendar, Building2, DollarSign, Tag, Package, FileText, Shield, Clock, MapPin, Hash, Filter, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Database, Search, ChevronDown, ChevronUp, ExternalLink, Calendar, Building2, DollarSign, Tag, Package, FileText, Shield, Clock, MapPin, Hash, Filter, X, ChevronLeft, ChevronRight, Pencil, Save, Trash2, XCircle, Check } from 'lucide-react'
 import { API_URL } from '../config'
 
 export default function LicitacionesCR() {
@@ -15,6 +15,11 @@ export default function LicitacionesCR() {
   const [tipoFilter, setTipoFilter] = useState('')
   const [detailCache, setDetailCache] = useState({})
   const [loadingDetail, setLoadingDetail] = useState(null)
+  const [editing, setEditing] = useState(null) // numeroProceso being edited
+  const [editData, setEditData] = useState({})
+  const [saving, setSaving] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
+  const [toast, setToast] = useState(null)
   const limit = 25
 
   const fetchData = async (p = 1, q = '', estado = '', tipo = '') => {
@@ -57,10 +62,93 @@ export default function LicitacionesCR() {
   const toggleExpand = (i, numeroProceso) => {
     if (expanded === i) {
       setExpanded(null)
+      setEditing(null)
     } else {
       setExpanded(i)
       fetchDetail(numeroProceso)
     }
+  }
+
+  const startEditing = (detail) => {
+    setEditing(detail.numeroProceso)
+    setEditData({
+      titulo: detail.titulo || '',
+      objeto: detail.objeto || '',
+      descripcion: detail.descripcion || '',
+      entidadEmisora: detail.entidadEmisora || '',
+      tipoProceso: detail.tipoProceso || '',
+      estado: detail.estado || '',
+      monto: detail.monto || '',
+      montoTexto: detail.montoTexto || '',
+      moneda: detail.moneda || '',
+      modalidad: detail.modalidad || '',
+      unidadOperativa: detail.unidadOperativa || '',
+      provincia: detail.provincia || '',
+      procedimientoSeleccion: detail.procedimientoSeleccion || '',
+      duracionContrato: detail.duracionContrato || '',
+      fechaPublicacion: detail.fechaPublicacion ? detail.fechaPublicacion.slice(0, 16) : '',
+      fechaCierre: detail.fechaCierre ? detail.fechaCierre.slice(0, 16) : '',
+      fechaApertura: detail.fechaApertura ? detail.fechaApertura.slice(0, 16) : '',
+      urlDetalle: detail.urlDetalle || '',
+      urlPliego: detail.urlPliego || '',
+    })
+  }
+
+  const saveEdits = async (numeroProceso) => {
+    setSaving(true)
+    try {
+      // Build update object, only include changed fields
+      const updates = {}
+      for (const [key, val] of Object.entries(editData)) {
+        if (val !== '' || val === '') updates[key] = val
+      }
+      // Convert monto to number if provided
+      if (updates.monto !== undefined && updates.monto !== '') {
+        updates.monto = parseFloat(updates.monto) || 0
+      }
+      
+      const res = await fetch(`${API_URL}/api/dashboard/licitaciones-cr/${encodeURIComponent(numeroProceso)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      })
+      const d = await res.json()
+      if (d.success) {
+        setDetailCache(prev => ({ ...prev, [numeroProceso]: d.licitacion }))
+        // Update in list too
+        setLicitaciones(prev => prev.map(l => l.numeroProceso === numeroProceso ? { ...l, ...updates } : l))
+        setEditing(null)
+        showToast('Licitación actualizada correctamente', 'success')
+      } else {
+        showToast(d.mensaje || 'Error al guardar', 'error')
+      }
+    } catch (e) {
+      showToast('Error: ' + e.message, 'error')
+    }
+    setSaving(false)
+  }
+
+  const deleteLicitacion = async (numeroProceso) => {
+    try {
+      const res = await fetch(`${API_URL}/api/dashboard/licitaciones-cr/${encodeURIComponent(numeroProceso)}`, { method: 'DELETE' })
+      const d = await res.json()
+      if (d.success) {
+        setLicitaciones(prev => prev.filter(l => l.numeroProceso !== numeroProceso))
+        setExpanded(null)
+        setDeleteConfirm(null)
+        setTotal(t => t - 1)
+        showToast('Licitación eliminada', 'success')
+      } else {
+        showToast(d.mensaje || 'Error al eliminar', 'error')
+      }
+    } catch (e) {
+      showToast('Error: ' + e.message, 'error')
+    }
+  }
+
+  const showToast = (msg, type) => {
+    setToast({ msg, type })
+    setTimeout(() => setToast(null), 3000)
   }
 
   const handleSearch = (e) => {
@@ -233,6 +321,93 @@ export default function LicitacionesCR() {
                               const detail = detailCache[lic.numeroProceso] || lic
                               return (
                             <div className="bg-gray-900/80 border-t border-b border-cyan-500/20 p-6">
+                              {/* Toolbar */}
+                              <div className="flex items-center gap-2 mb-4">
+                                {editing === detail.numeroProceso ? (
+                                  <>
+                                    <button onClick={() => saveEdits(detail.numeroProceso)} disabled={saving}
+                                      className="px-4 py-2 bg-green-600/20 border border-green-500/30 rounded-lg text-green-400 text-sm hover:bg-green-600/30 transition-colors flex items-center gap-2 disabled:opacity-50">
+                                      {saving ? <div className="w-4 h-4 border-2 border-green-400/30 border-t-green-400 rounded-full animate-spin" /> : <Save size={14} />} Guardar
+                                    </button>
+                                    <button onClick={() => setEditing(null)}
+                                      className="px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 text-sm hover:bg-gray-700 transition-colors flex items-center gap-2">
+                                      <XCircle size={14} /> Cancelar
+                                    </button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <button onClick={() => startEditing(detail)}
+                                      className="px-4 py-2 bg-cyan-600/20 border border-cyan-500/30 rounded-lg text-cyan-400 text-sm hover:bg-cyan-600/30 transition-colors flex items-center gap-2">
+                                      <Pencil size={14} /> Editar
+                                    </button>
+                                    <button onClick={() => setDeleteConfirm(detail.numeroProceso)}
+                                      className="px-4 py-2 bg-red-600/10 border border-red-500/20 rounded-lg text-red-400 text-sm hover:bg-red-600/20 transition-colors flex items-center gap-2">
+                                      <Trash2 size={14} /> Eliminar
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+
+                              {/* Delete confirmation */}
+                              {deleteConfirm === detail.numeroProceso && (
+                                <div className="mb-4 p-4 bg-red-900/20 border border-red-500/30 rounded-xl flex items-center gap-4">
+                                  <span className="text-red-400 text-sm">¿Eliminar esta licitación permanentemente?</span>
+                                  <button onClick={() => deleteLicitacion(detail.numeroProceso)}
+                                    className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm hover:bg-red-500">Sí, eliminar</button>
+                                  <button onClick={() => setDeleteConfirm(null)}
+                                    className="px-3 py-1.5 bg-gray-700 text-gray-300 rounded-lg text-sm hover:bg-gray-600">Cancelar</button>
+                                </div>
+                              )}
+
+                              {/* Edit mode */}
+                              {editing === detail.numeroProceso ? (
+                                <div className="space-y-4 mb-6">
+                                  <div className="grid md:grid-cols-2 gap-4">
+                                    {[
+                                      ['titulo', 'Título'],
+                                      ['entidadEmisora', 'Entidad Emisora'],
+                                      ['tipoProceso', 'Tipo de Proceso'],
+                                      ['estado', 'Estado'],
+                                      ['modalidad', 'Modalidad'],
+                                      ['procedimientoSeleccion', 'Procedimiento'],
+                                      ['unidadOperativa', 'Unidad Operativa'],
+                                      ['provincia', 'Provincia'],
+                                      ['monto', 'Monto'],
+                                      ['montoTexto', 'Monto (texto)'],
+                                      ['moneda', 'Moneda'],
+                                      ['duracionContrato', 'Duración Contrato'],
+                                      ['fechaPublicacion', 'Fecha Publicación'],
+                                      ['fechaCierre', 'Fecha Cierre'],
+                                      ['fechaApertura', 'Fecha Apertura'],
+                                      ['urlDetalle', 'URL Detalle'],
+                                      ['urlPliego', 'URL Pliego'],
+                                    ].map(([key, label]) => (
+                                      <div key={key}>
+                                        <label className="text-xs text-gray-500 mb-1 block">{label}</label>
+                                        <input
+                                          type={key.startsWith('fecha') ? 'datetime-local' : key === 'monto' ? 'number' : 'text'}
+                                          value={editData[key] || ''}
+                                          onChange={e => setEditData(prev => ({ ...prev, [key]: e.target.value }))}
+                                          className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:border-cyan-500"
+                                        />
+                                      </div>
+                                    ))}
+                                  </div>
+                                  <div>
+                                    <label className="text-xs text-gray-500 mb-1 block">Objeto</label>
+                                    <textarea rows={3} value={editData.objeto || ''}
+                                      onChange={e => setEditData(prev => ({ ...prev, objeto: e.target.value }))}
+                                      className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:border-cyan-500" />
+                                  </div>
+                                  <div>
+                                    <label className="text-xs text-gray-500 mb-1 block">Descripción</label>
+                                    <textarea rows={3} value={editData.descripcion || ''}
+                                      onChange={e => setEditData(prev => ({ ...prev, descripcion: e.target.value }))}
+                                      className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:border-cyan-500" />
+                                  </div>
+                                </div>
+                              ) : (
+                              <>
                               {/* Header */}
                               <div className="grid md:grid-cols-2 gap-6 mb-6">
                                 <div>
@@ -360,6 +535,8 @@ export default function LicitacionesCR() {
                                   </a>
                                 )}
                               </div>
+                              </>
+                              )}
                             </div>
                               )
                             })()}
@@ -391,6 +568,15 @@ export default function LicitacionesCR() {
             </div>
           </div>
         </>
+      )}
+      {/* Toast */}
+      {toast && (
+        <div className={`fixed bottom-6 right-6 px-5 py-3 rounded-xl text-sm font-medium shadow-2xl z-50 flex items-center gap-2 ${
+          toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+        }`}>
+          {toast.type === 'success' ? <Check size={16} /> : <X size={16} />}
+          {toast.msg}
+        </div>
       )}
     </div>
   )
