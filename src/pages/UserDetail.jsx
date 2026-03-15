@@ -523,12 +523,14 @@ export default function UserDetail() {
                   </button>
                 </>
               ) : (
-                <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 rounded-xl text-sm font-medium shadow-lg shadow-blue-500/25 transition-all">
-                  <Edit className="w-3.5 h-3.5" /> Editar
-                </button>
-                <button onClick={() => setDeleteUserConfirm(true)} className="flex items-center gap-1.5 px-4 py-2 bg-white/5 border border-red-500/20 text-red-400 hover:bg-red-500/10 hover:border-red-500/40 rounded-xl text-sm font-medium transition-all">
-                  <Trash2 className="w-3.5 h-3.5" /> Eliminar
-                </button>
+                <>
+                  <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 rounded-xl text-sm font-medium shadow-lg shadow-blue-500/25 transition-all">
+                    <Edit className="w-3.5 h-3.5" /> Editar
+                  </button>
+                  <button onClick={() => setDeleteUserConfirm(true)} className="flex items-center gap-1.5 px-4 py-2 bg-white/5 border border-red-500/20 text-red-400 hover:bg-red-500/10 hover:border-red-500/40 rounded-xl text-sm font-medium transition-all">
+                    <Trash2 className="w-3.5 h-3.5" /> Eliminar
+                  </button>
+                </>
               )}
             </div>
           </div>
