@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Search, Filter, Crown, Mail, MapPin, Bell, ChevronRight, Download, UserPlus } from 'lucide-react'
+import { Search, Filter, Crown, Mail, MapPin, Bell, ChevronRight, Download, UserPlus, Trash2 } from 'lucide-react'
 import { API_URL } from '../config'
 import { Link } from 'react-router-dom'
 
@@ -11,6 +11,8 @@ export default function UsersPage() {
   const [filterPlan, setFilterPlan] = useState('all')
   const [filterCountry, setFilterCountry] = useState('all')
   const [sortBy, setSortBy] = useState('recent')
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     fetch(`${API_URL}/api/dashboard/usuarios`)
@@ -45,6 +47,21 @@ export default function UsersPage() {
     })
 
   const countries = [...new Set(users.map(u => u.pais).filter(Boolean))]
+
+  const handleDelete = async (userId) => {
+    setDeleting(true)
+    try {
+      const res = await fetch(`${API_URL}/api/dashboard/usuarios/${userId}`, { method: 'DELETE' })
+      if (res.ok) {
+        setUsers(prev => prev.filter(u => u._id !== userId))
+        setDeleteConfirm(null)
+      }
+    } catch (e) {
+      console.error('Error eliminando usuario:', e)
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>
 
@@ -139,9 +156,14 @@ export default function UsersPage() {
                       {new Date(u.createdAt).toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </td>
                     <td className="px-5 py-3">
-                      <Link to={`/users/${u._id}`} className="text-blue-400 hover:text-blue-300">
-                        <ChevronRight className="w-4 h-4" />
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(u) }} className="text-gray-500 hover:text-red-400 transition-colors p-1 rounded hover:bg-red-500/10" title="Eliminar usuario">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                        <Link to={`/users/${u._id}`} className="text-blue-400 hover:text-blue-300">
+                          <ChevronRight className="w-4 h-4" />
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 )
@@ -156,6 +178,34 @@ export default function UsersPage() {
           Mostrando {filtered.length} de {users.length} usuarios
         </div>
       </div>
+      {/* Delete confirmation modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setDeleteConfirm(null)}>
+          <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">Eliminar usuario</h3>
+                <p className="text-sm text-gray-400">Esta acción no se puede deshacer</p>
+              </div>
+            </div>
+            <p className="text-gray-300 text-sm mb-1">¿Estás seguro de que querés eliminar a:</p>
+            <p className="text-white font-medium mb-1">{deleteConfirm.nombre}</p>
+            <p className="text-gray-400 text-sm mb-6">{deleteConfirm.email}</p>
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setDeleteConfirm(null)} className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">
+                Cancelar
+              </button>
+              <button onClick={() => handleDelete(deleteConfirm._id)} disabled={deleting}
+                className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50">
+                {deleting ? 'Eliminando...' : 'Eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

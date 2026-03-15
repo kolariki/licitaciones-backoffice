@@ -35,6 +35,8 @@ export default function UserDetail() {
   const [editing, setEditing] = useState(false)
   const [editForm, setEditForm] = useState({})
   const [saving, setSaving] = useState(false)
+  const [deleteUserConfirm, setDeleteUserConfirm] = useState(false)
+  const [deletingUser, setDeletingUser] = useState(false)
 
   // Toasts
   const [toasts, setToasts] = useState([])
@@ -100,6 +102,23 @@ export default function UserDetail() {
       addToast('error', 'Error de conexión')
     }
     setSaving(false)
+  }
+
+  const handleDeleteUser = async () => {
+    setDeletingUser(true)
+    try {
+      const res = await fetch(`${API_URL}/api/dashboard/usuarios/${userId}`, { method: 'DELETE' })
+      const d = await res.json()
+      if (d.success) {
+        addToast('success', 'Usuario eliminado')
+        setTimeout(() => window.location.href = '/users', 500)
+      } else {
+        addToast('error', d.mensaje || 'Error eliminando usuario')
+      }
+    } catch {
+      addToast('error', 'Error de conexión')
+    }
+    setDeletingUser(false)
   }
 
   const resetAlertForm = () => {
@@ -264,6 +283,38 @@ export default function UserDetail() {
                 className="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-600 to-red-500 rounded-xl text-sm font-medium text-white hover:from-red-500 hover:to-red-400 shadow-lg shadow-red-500/25 transition-all disabled:opacity-50"
               >
                 {deletingAlert === deleteConfirm ? 'Eliminando...' : 'Eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete User Confirmation Modal */}
+      {deleteUserConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setDeleteUserConfirm(false)}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="anim-scale relative bg-gray-900 border border-white/10 rounded-2xl p-6 max-w-sm w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-center w-12 h-12 bg-red-500/15 rounded-full mx-auto mb-4">
+              <AlertTriangle className="w-6 h-6 text-red-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-center mb-2">¿Eliminar usuario?</h3>
+            <p className="text-sm text-gray-400 text-center mb-2">Se eliminará permanentemente a:</p>
+            <p className="text-white font-medium text-center">{user?.nombre}</p>
+            <p className="text-gray-400 text-sm text-center mb-1">{user?.email}</p>
+            <p className="text-xs text-red-400/70 text-center mb-6">También se eliminarán todas sus alertas.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteUserConfirm(false)}
+                className="flex-1 px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm font-medium text-gray-300 hover:bg-white/10 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDeleteUser}
+                disabled={deletingUser}
+                className="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-600 to-red-500 rounded-xl text-sm font-medium text-white hover:from-red-500 hover:to-red-400 shadow-lg shadow-red-500/25 transition-all disabled:opacity-50"
+              >
+                {deletingUser ? 'Eliminando...' : 'Eliminar'}
               </button>
             </div>
           </div>
@@ -475,6 +526,9 @@ export default function UserDetail() {
                 <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 rounded-xl text-sm font-medium shadow-lg shadow-blue-500/25 transition-all">
                   <Edit className="w-3.5 h-3.5" /> Editar
                 </button>
+                <button onClick={() => setDeleteUserConfirm(true)} className="flex items-center gap-1.5 px-4 py-2 bg-white/5 border border-red-500/20 text-red-400 hover:bg-red-500/10 hover:border-red-500/40 rounded-xl text-sm font-medium transition-all">
+                  <Trash2 className="w-3.5 h-3.5" /> Eliminar
+                </button>
               )}
             </div>
           </div>
@@ -498,9 +552,10 @@ export default function UserDetail() {
                   <select value={editForm.suscripcion} onChange={e => setEditForm({...editForm, suscripcion: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-sm text-white focus:border-blue-500/50 focus:outline-none transition-colors">
                     <option value="free">Free</option>
                     <option value="premium">Premium</option>
+                    <option value="max">Max</option>
                   </select>
                 ) : (
-                  <p className={`text-sm font-medium ${isPremium ? 'text-purple-400' : ''}`}>{isPremium ? '★ Premium' : 'Free'}</p>
+                  <p className={`text-sm font-medium ${user.rol === 'max' ? 'text-amber-400' : isPremium ? 'text-purple-400' : ''}`}>{user.rol === 'max' ? '👑 Max' : isPremium ? '★ Premium' : 'Free'}</p>
                 )
               },
               { icon: Bell, label: 'Alertas', content: <p className="text-sm font-medium">{alerts.length} configuradas</p> },
