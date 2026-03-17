@@ -188,6 +188,7 @@ function ScraperCard({ scraper, serverStatus }) {
   const [result, setResult] = useState(null)
   const [resultExtra, setResultExtra] = useState(null)
   const [maxPages, setMaxPages] = useState(scraper.id === 'faltantes' ? 25 : 5)
+  const [horasAtras, setHorasAtras] = useState(8)
 
   const status = scraper.statusKey ? serverStatus?.scrapers?.[scraper.statusKey] : null
   const Icon = scraper.icon
@@ -198,7 +199,12 @@ function ScraperCard({ scraper, serverStatus }) {
     setR(true)
     setRes(null)
     try {
-      const body = (scraper.id === 'principal' || scraper.id === 'faltantes') && !isExtra ? JSON.stringify({ maxPages }) : undefined
+      let body = undefined
+      if ((scraper.id === 'principal' || scraper.id === 'faltantes') && !isExtra) {
+        body = JSON.stringify({ maxPages })
+      } else if (scraper.id === 'alertas' && !isExtra) {
+        body = JSON.stringify({ horasAtras })
+      }
       const r = await fetch(`${SCRAPER_URL}${endpoint}`, { 
         method: 'POST',
         headers: body ? { 'Content-Type': 'application/json' } : {},
@@ -267,6 +273,13 @@ function ScraperCard({ scraper, serverStatus }) {
               <div className="flex items-center gap-2 mb-2">
                 <label className="text-xs text-gray-400">Páginas:</label>
                 <input type="number" min={1} max={100} value={maxPages} onChange={e => setMaxPages(parseInt(e.target.value) || (scraper.id === 'principal' ? 5 : 25))}
+                  className="w-16 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white text-center" />
+              </div>
+            )}
+            {scraper.id === 'alertas' && (
+              <div className="flex items-center gap-2 mb-2">
+                <label className="text-xs text-gray-400">Horas atrás:</label>
+                <input type="number" min={1} max={720} value={horasAtras} onChange={e => setHorasAtras(parseInt(e.target.value) || 8)}
                   className="w-16 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white text-center" />
               </div>
             )}
