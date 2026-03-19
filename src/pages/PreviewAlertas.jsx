@@ -13,6 +13,7 @@ export default function PreviewAlertas() {
   const [sentAlerts, setSentAlerts] = useState({})
   const [expandedPayloads, setExpandedPayloads] = useState({})
   const [result, setResult] = useState(null)
+  const [horasAtras, setHorasAtras] = useState(4)
 
   const fetchPayloads = async () => {
     setLoading(true)
@@ -35,7 +36,7 @@ export default function PreviewAlertas() {
       const r = await fetch(`${SCRAPER_URL}/api/regenerar-preview`, { 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ horasAtras: 4 })
+        body: JSON.stringify({ horasAtras })
       })
       const d = await r.json()
       setResult({ success: d.success !== false, message: d.success ? 'Preview regenerado correctamente' : (d.error || 'Error') })
@@ -137,7 +138,13 @@ export default function PreviewAlertas() {
           <h1 className="text-2xl font-bold">Preview de Alertas</h1>
           <p className="text-gray-400 text-sm mt-1">Revisa y envía alertas generadas a usuarios</p>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap items-center">
+          <div className="flex items-center gap-1.5 bg-gray-800 rounded-lg border border-gray-700 px-2 py-1">
+            <Calendar className="w-3.5 h-3.5 text-gray-400" />
+            <input type="number" min="1" max="72" value={horasAtras} onChange={e => setHorasAtras(Math.max(1, parseInt(e.target.value) || 4))}
+              className="w-12 bg-transparent text-xs text-white text-center outline-none" />
+            <span className="text-xs text-gray-400">hs</span>
+          </div>
           <button onClick={ejecutarAlertas} disabled={runningAlertas}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 transition-colors disabled:opacity-50">
             {runningAlertas ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bell className="w-3.5 h-3.5" />}
