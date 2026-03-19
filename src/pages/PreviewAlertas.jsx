@@ -32,7 +32,11 @@ export default function PreviewAlertas() {
     setRegenerating(true)
     setResult(null)
     try {
-      const r = await fetch(`${SCRAPER_URL}/api/regenerar-preview`, { method: 'POST' })
+      const r = await fetch(`${SCRAPER_URL}/api/regenerar-preview`, { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ horasAtras: 4 })
+      })
       const d = await r.json()
       setResult({ success: d.success !== false, message: d.success ? 'Preview regenerado correctamente' : (d.error || 'Error') })
       if (d.success) fetchPayloads()
