@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Bell, Search, User, Tag, Code, Clock, ToggleLeft, ToggleRight, Zap, Filter, Inbox } from 'lucide-react'
+import { Bell, Search, User, Tag, Code, Clock, ToggleLeft, ToggleRight, Zap, Filter, Inbox, Info } from 'lucide-react'
 import { API_URL } from '../config'
 import { Link } from 'react-router-dom'
 
@@ -131,6 +131,27 @@ export default function Alerts() {
                 {f.label} <span className="opacity-60 ml-1">{f.count}</span>
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* Instructivo */}
+        <div className="anim-slide p-4 bg-blue-500/5 border border-blue-500/15 rounded-2xl" style={{ animationDelay: '250ms' }}>
+          <p className="text-xs font-semibold text-blue-400 mb-2 flex items-center gap-1.5">
+            <Info className="w-3.5 h-3.5" /> Guía para alertas bien configuradas
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-gray-400">
+            <div className="flex gap-2">
+              <span className="text-green-400 mt-0.5">✅</span>
+              <div><strong className="text-gray-300">Frases completas:</strong> Cada chip debe ser una frase de búsqueda completa. Ej: <span className="text-blue-300">"organización de eventos"</span> es 1 chip.</div>
+            </div>
+            <div className="flex gap-2">
+              <span className="text-red-400 mt-0.5">❌</span>
+              <div><strong className="text-gray-300">NO palabras sueltas genéricas:</strong> Evitar <span className="text-red-300">"de"</span>, <span className="text-red-300">"la"</span>, <span className="text-red-300">"para"</span> como chips individuales — matchean con todo.</div>
+            </div>
+            <div className="flex gap-2">
+              <span className="text-amber-400 mt-0.5">💡</span>
+              <div><strong className="text-gray-300">Más específico = mejor:</strong> <span className="text-green-300">"equipos de refrigeración"</span> es mejor que <span className="text-red-300">"equipos"</span> solo.</div>
+            </div>
           </div>
         </div>
 
