@@ -223,11 +223,16 @@ export default function PreviewAlertas() {
                     <Bell className="w-5 h-5 text-amber-400" />
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-semibold text-white">{alerta?.nombre || 'Alerta'}</span>
                       <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${alerta?.tipo === 'palabra_clave' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : alerta?.tipo === 'codigo' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' : 'bg-gray-700 text-gray-400'}`}>
                         {alerta?.tipo || 'tipo'}
                       </span>
+                      {alerta?.perfilNombre && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold text-white border" style={{ backgroundColor: (alerta.perfilColor || '#1a3a5c') + '30', borderColor: (alerta.perfilColor || '#1a3a5c') + '50', color: alerta.perfilColor || '#a0aec0' }}>
+                          📋 {alerta.perfilNombre}
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-3 text-xs text-gray-500 mt-0.5">
                       <span className="flex items-center gap-1"><User className="w-3 h-3" />{usuario?.nombre || '—'}</span>
@@ -267,6 +272,12 @@ export default function PreviewAlertas() {
                             <span className="text-xs font-mono text-amber-400/80 bg-amber-500/5 px-2 py-0.5 rounded border border-amber-500/10">
                               {lic.numeroProceso}
                             </span>
+                            {(lic.fechaExtraccion || lic.fechaPublicacion || payload.timestamp) && (
+                              <span className="text-[10px] text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                <Calendar className="w-2.5 h-2.5" />
+                                Extraído: {formatDate(lic.fechaExtraccion || lic.fechaPublicacion || payload.timestamp)}
+                              </span>
+                            )}
                             {lic.razonCoincidencia && (
                               <span className="text-[10px] text-gray-500 italic">{lic.razonCoincidencia}</span>
                             )}
