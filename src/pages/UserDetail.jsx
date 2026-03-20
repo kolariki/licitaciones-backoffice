@@ -92,7 +92,7 @@ export default function UserDetail() {
       })
       const d = await res.json()
       if (d.success) {
-        setUser({ ...user, ...editForm })
+        setUser({ ...user, ...editForm, rol: editForm.suscripcion, nivelSuscripcion: editForm.suscripcion })
         setEditing(false)
         addToast('success', 'Usuario actualizado')
       } else {
