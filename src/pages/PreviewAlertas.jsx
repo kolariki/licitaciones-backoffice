@@ -13,7 +13,7 @@ export default function PreviewAlertas() {
   const [sentAlerts, setSentAlerts] = useState({})
   const [expandedPayloads, setExpandedPayloads] = useState({})
   const [result, setResult] = useState(null)
-  const [horasAtras, setHorasAtras] = useState(4)
+  const [horasAtras, setHorasAtras] = useState(12)
 
   const fetchPayloads = async () => {
     setLoading(true)
