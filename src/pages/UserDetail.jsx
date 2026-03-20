@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Mail, MapPin, Crown, Bell, Calendar, Edit, Save, X, Trash2, Clock, Plus, Search, Tag, ToggleLeft, ToggleRight, AlertTriangle, CheckCircle, XCircle, Copy, Check } from 'lucide-react'
+import { ArrowLeft, Mail, MapPin, Crown, Bell, Calendar, Edit, Save, X, Trash2, Clock, Plus, Search, Tag, ToggleLeft, ToggleRight, AlertTriangle, CheckCircle, XCircle, Copy, Check, Info } from 'lucide-react'
 import { API_URL } from '../config'
 
 // Toast component
@@ -165,6 +165,7 @@ export default function UserDetail() {
         activa: alertForm.activa,
         frecuencia: alertForm.frecuencia,
         palabrasClaveArray: alertForm.tipo === 'keywords' ? kws : [],
+        palabrasClave: alertForm.tipo === 'keywords' ? kws.join('+') : '',
         codigos: alertForm.tipo === 'codes' ? codes : []
       }
 
@@ -586,6 +587,20 @@ export default function UserDetail() {
                 <Plus className="w-3.5 h-3.5" /> Nueva alerta
               </button>
             </div>
+          </div>
+
+          {/* Instructivo */}
+          <div className="mx-5 mt-4 mb-2 p-4 bg-blue-500/5 border border-blue-500/15 rounded-xl">
+            <p className="text-xs font-semibold text-blue-400 mb-2 flex items-center gap-1.5">
+              <Info className="w-3.5 h-3.5" /> Cómo crear alertas correctamente
+            </p>
+            <ul className="text-xs text-gray-400 space-y-1.5 ml-5 list-disc">
+              <li><strong className="text-gray-300">Frases completas como un solo chip:</strong> Escribí la frase entera y presioná <span className="text-blue-400 font-mono bg-blue-500/10 px-1.5 py-0.5 rounded">Enter</span> o <span className="text-blue-400 font-mono bg-blue-500/10 px-1.5 py-0.5 rounded">,</span> — Ej: <span className="text-blue-300">"organización de eventos"</span> → Enter → <span className="text-blue-300">"catering"</span> → Enter</li>
+              <li><strong className="text-gray-300">NO separar por espacios:</strong> <span className="text-red-400">"organización de eventos"</span> es <strong>1 chip</strong>, no 3 chips separados</li>
+              <li><strong className="text-gray-300">Cada chip = una frase de búsqueda:</strong> El sistema busca cada chip como frase completa en los títulos de licitaciones</li>
+              <li><strong className="text-gray-300">Evitar palabras genéricas solas:</strong> <span className="text-red-400">❌ "de", "la", "para"</span> matchean con todo. Usá frases específicas: <span className="text-green-400">✅ "equipos de gas", "mantenimiento preventivo"</span></li>
+              <li><strong className="text-gray-300">Códigos SICOP:</strong> Usá el tipo "Códigos" con números exactos del catálogo SICOP (ej: <span className="text-amber-300 font-mono">82101502</span>)</li>
+            </ul>
           </div>
 
           {/* Alert List */}
