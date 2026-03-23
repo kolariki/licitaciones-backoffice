@@ -79,7 +79,7 @@ export default function Login() {
       })
       const data = await res.json()
       if (res.ok && data.success) {
-        localStorage.setItem('bo_token', data.token)
+        localStorage.setItem('bo_token_v2', data.token)
         localStorage.setItem('bo_user', JSON.stringify(data.usuario))
         window.location.href = '/dashboard'
       } else {
