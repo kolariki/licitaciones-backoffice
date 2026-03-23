@@ -96,7 +96,7 @@ export default function Login() {
       <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
         <div className="w-full max-w-sm">
           <div className="text-center mb-8">
-            <img src="/elevum-logo.svg" alt="Elevum" className="h-10 mx-auto mb-4" />
+            <img src="/elevum-logo.png" alt="Elevum" className="h-10 mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-white">Verificación 2FA</h1>
             <p className="text-gray-500 text-sm mt-1">Ingresá el código enviado a tu email</p>
           </div>
@@ -154,7 +154,7 @@ export default function Login() {
     <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <img src="/elevum-logo.svg" alt="Elevum" className="h-10 mx-auto mb-4" />
+          <img src="/elevum-logo.png" alt="Elevum" className="h-10 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-white">Elevum Backoffice</h1>
           <p className="text-gray-500 text-sm mt-1">Panel de administración</p>
         </div>
