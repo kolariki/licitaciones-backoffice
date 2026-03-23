@@ -17,8 +17,7 @@ export function AuthProvider({ children }) {
         .then(r => r.ok ? r.json() : Promise.reject())
         .then(d => {
           const u = d.usuario || d
-          const allowedRoles = ['admin', 'desarrollador', 'Desarrollador', 'premium']
-          if (allowedRoles.includes(u.rol) || u.email === 'test_cr@elevumgroup.com' || u.email === 'ivankolariki1990@gmail.com') {
+          if (u.rol === 'elevum') {
             setUser(u)
           } else {
             setToken(null)
@@ -27,8 +26,8 @@ export function AuthProvider({ children }) {
           setLoading(false)
         })
         .catch(() => {
-          // Token invalid - still allow if we can verify via dashboard (public)
-          setUser({ _id: 'session', nombre: 'Admin', rol: 'admin' })
+          setToken(null)
+          localStorage.removeItem('bo_token')
           setLoading(false)
         })
     } else {
@@ -36,20 +35,12 @@ export function AuthProvider({ children }) {
     }
   }, [token])
 
-  const login = async (email, password) => {
-    const res = await fetch(`${API_URL}/api/usuarios/login/costa-rica`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    })
-    const data = await res.json()
-    if (data.token) {
-      localStorage.setItem('bo_token', data.token)
-      setToken(data.token)
-      setUser(data.usuario || { email, rol: 'admin' })
-      return { success: true }
-    }
-    return { success: false, message: data.message || data.mensaje || 'Error de autenticación' }
+  const login = async () => {
+    // Login is handled by Login.jsx via 2FA flow
+    // This just triggers a re-check of the token
+    const t = localStorage.getItem('bo_token')
+    if (t) setToken(t)
+    return { success: !!t }
   }
 
   const logout = () => {
