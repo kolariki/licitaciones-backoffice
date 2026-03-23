@@ -5,7 +5,7 @@ const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
-  const [token, setToken] = useState(localStorage.getItem('bo_token'))
+  const [token, setToken] = useState(localStorage.getItem('bo_token_v2'))
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -35,7 +35,7 @@ export function AuthProvider({ children }) {
             localStorage.setItem('bo_user', JSON.stringify(u))
           } else {
             setToken(null)
-            localStorage.removeItem('bo_token')
+            localStorage.removeItem('bo_token_v2')
             localStorage.removeItem('bo_user')
           }
           setLoading(false)
@@ -54,7 +54,7 @@ export function AuthProvider({ children }) {
             } catch {}
           }
           setToken(null)
-          localStorage.removeItem('bo_token')
+          localStorage.removeItem('bo_token_v2')
           localStorage.removeItem('bo_user')
           setLoading(false)
         })
@@ -64,7 +64,7 @@ export function AuthProvider({ children }) {
   }, [token])
 
   const login = async () => {
-    const t = localStorage.getItem('bo_token')
+    const t = localStorage.getItem('bo_token_v2')
     if (t) {
       setToken(t)
       const cached = localStorage.getItem('bo_user')
@@ -76,7 +76,7 @@ export function AuthProvider({ children }) {
   }
 
   const logout = () => {
-    localStorage.removeItem('bo_token')
+    localStorage.removeItem('bo_token_v2')
     localStorage.removeItem('bo_user')
     setToken(null)
     setUser(null)
