@@ -115,14 +115,15 @@ function ProtectedApp() {
       <Routes>
         <Route path="/bb" element={<Login />} />
         <Route path="*" element={
-          <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
+          <div className="min-h-screen bg-white flex items-center justify-center px-4">
             <div className="text-center">
               <img src="/elevum-logo.png" alt="Elevum" className="h-12 mx-auto mb-6" />
-              <h1 className="text-3xl font-bold text-white mb-2">Elevum Licitaciones</h1>
-              <p className="text-gray-400 mb-8">Plataforma inteligente de gestión de licitaciones</p>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Elevum Licitaciones</h1>
+              <p className="text-gray-500 mb-8">Plataforma inteligente de gestión de licitaciones</p>
               <a
                 href="https://elevumgroup.com"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium text-white transition-colors"
+                style={{ background: 'linear-gradient(135deg, #1a3a5c 0%, #0d2847 100%)' }}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-medium text-white transition-opacity hover:opacity-90"
               >
                 Conocer plataforma
               </a>
