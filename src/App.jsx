@@ -109,7 +109,31 @@ function ProtectedApp() {
     </div>
   )
 
-  if (!isAuthenticated) return <Login />
+  // If not authenticated, only /admin shows login — everything else shows landing
+  if (!isAuthenticated) {
+    return (
+      <Routes>
+        <Route path="/admin" element={<Login />} />
+        <Route path="*" element={
+          <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-blue-600/20 border border-blue-500/30 mb-6">
+                <Layers className="w-10 h-10 text-blue-400" />
+              </div>
+              <h1 className="text-3xl font-bold text-white mb-2">Elevum Licitaciones</h1>
+              <p className="text-gray-400 mb-8">Plataforma inteligente de gestión de licitaciones</p>
+              <a
+                href="https://elevumgroup.com"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium text-white transition-colors"
+              >
+                Conocer plataforma
+              </a>
+            </div>
+          </div>
+        } />
+      </Routes>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-950">
@@ -123,6 +147,7 @@ function ProtectedApp() {
         <main className="p-4 md:p-6">
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/admin" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/users" element={<UsersPage />} />
             <Route path="/users/:userId" element={<UserDetail />} />
