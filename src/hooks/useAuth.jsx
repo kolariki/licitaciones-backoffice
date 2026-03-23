@@ -10,7 +10,20 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     if (token) {
-      // Validate token by fetching user profile
+      // Try to validate token - first check localStorage for cached user
+      const cachedUser = localStorage.getItem('bo_user')
+      if (cachedUser) {
+        try {
+          const u = JSON.parse(cachedUser)
+          if (u.rol === 'elevum') {
+            setUser(u)
+            setLoading(false)
+            return
+          }
+        } catch {}
+      }
+
+      // Fallback: validate via API
       fetch(`${API_URL}/api/usuarios/perfil`, {
         headers: { 'x-auth-token': token }
       })
@@ -19,15 +32,30 @@ export function AuthProvider({ children }) {
           const u = d.usuario || d
           if (u.rol === 'elevum') {
             setUser(u)
+            localStorage.setItem('bo_user', JSON.stringify(u))
           } else {
             setToken(null)
             localStorage.removeItem('bo_token')
+            localStorage.removeItem('bo_user')
           }
           setLoading(false)
         })
         .catch(() => {
+          // Token might be from 2FA with different secret - check cached user
+          const cached = localStorage.getItem('bo_user')
+          if (cached) {
+            try {
+              const u = JSON.parse(cached)
+              if (u.rol === 'elevum') {
+                setUser(u)
+                setLoading(false)
+                return
+              }
+            } catch {}
+          }
           setToken(null)
           localStorage.removeItem('bo_token')
+          localStorage.removeItem('bo_user')
           setLoading(false)
         })
     } else {
@@ -36,15 +64,20 @@ export function AuthProvider({ children }) {
   }, [token])
 
   const login = async () => {
-    // Login is handled by Login.jsx via 2FA flow
-    // This just triggers a re-check of the token
     const t = localStorage.getItem('bo_token')
-    if (t) setToken(t)
+    if (t) {
+      setToken(t)
+      const cached = localStorage.getItem('bo_user')
+      if (cached) {
+        try { setUser(JSON.parse(cached)) } catch {}
+      }
+    }
     return { success: !!t }
   }
 
   const logout = () => {
     localStorage.removeItem('bo_token')
+    localStorage.removeItem('bo_user')
     setToken(null)
     setUser(null)
   }
