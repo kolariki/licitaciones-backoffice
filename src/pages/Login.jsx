@@ -79,9 +79,9 @@ export default function Login() {
       })
       const data = await res.json()
       if (res.ok && data.success) {
-        // Use the login function to set state properly
         localStorage.setItem('bo_token', data.token)
-        window.location.reload()
+        localStorage.setItem('bo_user', JSON.stringify(data.usuario))
+        window.location.href = '/dashboard'
       } else {
         setError(data.message || 'Código inválido')
       }
