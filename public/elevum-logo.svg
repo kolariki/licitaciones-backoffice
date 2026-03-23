@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 48">
+  <defs>
+    <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6"/>
+      <stop offset="100%" style="stop-color:#1d4ed8"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="4" width="40" height="40" rx="10" fill="url(#g1)"/>
+  <text x="20" y="32" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-weight="bold" font-size="22">E</text>
+  <text x="52" y="34" fill="white" font-family="Arial, sans-serif" font-weight="700" font-size="28" letter-spacing="1">elevum</text>
+</svg>
