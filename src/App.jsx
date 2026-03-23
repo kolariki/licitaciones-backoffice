@@ -113,13 +113,11 @@ function ProtectedApp() {
   if (!isAuthenticated) {
     return (
       <Routes>
-        <Route path="/admin" element={<Login />} />
+        <Route path="/bb" element={<Login />} />
         <Route path="*" element={
           <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
             <div className="text-center">
-              <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-blue-600/20 border border-blue-500/30 mb-6">
-                <Layers className="w-10 h-10 text-blue-400" />
-              </div>
+              <img src="/elevum-logo.svg" alt="Elevum" className="h-12 mx-auto mb-6" />
               <h1 className="text-3xl font-bold text-white mb-2">Elevum Licitaciones</h1>
               <p className="text-gray-400 mb-8">Plataforma inteligente de gestión de licitaciones</p>
               <a
@@ -147,7 +145,7 @@ function ProtectedApp() {
         <main className="p-4 md:p-6">
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/admin" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/bb" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/users" element={<UsersPage />} />
             <Route path="/users/:userId" element={<UserDetail />} />
