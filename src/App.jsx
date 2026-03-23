@@ -113,7 +113,7 @@ function ProtectedApp() {
   if (!isAuthenticated) {
     return (
       <Routes>
-        <Route path="/admin" element={<Login />} />
+        <Route path="/bb" element={<Login />} />
         <Route path="*" element={
           <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
             <div className="text-center">
@@ -145,7 +145,7 @@ function ProtectedApp() {
         <main className="p-4 md:p-6">
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/admin" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/bb" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/users" element={<UsersPage />} />
             <Route path="/users/:userId" element={<UserDetail />} />
