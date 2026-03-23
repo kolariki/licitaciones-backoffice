@@ -15,6 +15,8 @@ import ScraperPrincipal from './pages/ScraperPrincipal'
 import PreviewAlertas from './pages/PreviewAlertas'
 import LicitacionesCR from './pages/LicitacionesCR'
 
+const SUPERADMIN_EMAIL = 'ivankolariki1990@gmail.com'
+
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/users', icon: Users, label: 'Usuarios' },
@@ -23,7 +25,7 @@ const navItems = [
   { to: '/licitaciones', icon: FileText, label: 'Licitaciones' },
   { to: '/recomendaciones', icon: Send, label: 'Recomendaciones' },
   { to: '/alertas-enviadas', icon: MailCheck, label: 'Alertas Enviadas' },
-  { to: '/scraper', icon: Server, label: 'Scraper Principal' },
+  { to: '/scraper', icon: Server, label: 'Scraper Principal', superadminOnly: true },
   { to: '/preview-alertas', icon: Eye, label: 'Preview Alertas' },
   { to: '/licitaciones-cr', icon: Database, label: 'BD Licitaciones CR' },
 ]
@@ -42,7 +44,7 @@ function Sidebar({ open, setOpen, alertsPending, onDismissAlerts }) {
           </div>
         </div>
         <nav className="p-4 space-y-1 flex-1">
-          {navItems.map(({ to, icon: Icon, label }) => {
+          {navItems.filter(item => !item.superadminOnly || user?.email === SUPERADMIN_EMAIL).map(({ to, icon: Icon, label }) => {
             const isAlertItem = to === '/preview-alertas' && alertsPending
             return (
               <NavLink
@@ -84,6 +86,12 @@ function Sidebar({ open, setOpen, alertsPending, onDismissAlerts }) {
   )
 }
 
+function SuperadminRoute({ children }) {
+  const { user } = useAuth()
+  if (user?.email !== SUPERADMIN_EMAIL) return <Navigate to="/dashboard" replace />
+  return children
+}
+
 function ProtectedApp() {
   const { isAuthenticated, loading } = useAuth()
   const [sidebarOpen, setSidebarOpen] = React.useState(false)
@@ -123,7 +131,7 @@ function ProtectedApp() {
             <Route path="/licitaciones" element={<Licitaciones />} />
             <Route path="/recomendaciones" element={<Recomendaciones />} />
             <Route path="/alertas-enviadas" element={<AlertasEnviadas />} />
-            <Route path="/scraper" element={<ScraperPrincipal />} />
+            <Route path="/scraper" element={<SuperadminRoute><ScraperPrincipal /></SuperadminRoute>} />
             <Route path="/preview-alertas" element={<PreviewAlertas />} />
             <Route path="/licitaciones-cr" element={<LicitacionesCR />} />
           </Routes>
