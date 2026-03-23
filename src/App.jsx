@@ -117,7 +117,7 @@ function ProtectedApp() {
         <Route path="*" element={
           <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
             <div className="text-center">
-              <img src="/elevum-logo.svg" alt="Elevum" className="h-12 mx-auto mb-6" />
+              <img src="/elevum-logo.png" alt="Elevum" className="h-12 mx-auto mb-6" />
               <h1 className="text-3xl font-bold text-white mb-2">Elevum Licitaciones</h1>
               <p className="text-gray-400 mb-8">Plataforma inteligente de gestión de licitaciones</p>
               <a
