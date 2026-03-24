@@ -400,6 +400,76 @@ function ChainExecution({ onChainComplete }) {
   )
 }
 
+function ExtractSpecific() {
+  const [numeros, setNumeros] = useState('')
+  const [running, setRunning] = useState(false)
+  const [result, setResult] = useState(null)
+
+  const ejecutar = async () => {
+    const lista = numeros.split(/[\n,;]+/).map(n => n.trim()).filter(Boolean)
+    if (lista.length === 0) return
+    if (lista.length > 20) { setResult({ success: false, message: 'Máximo 20 licitaciones por solicitud' }); return }
+    
+    setRunning(true)
+    setResult(null)
+    try {
+      const r = await fetch(`${SCRAPER_URL}/api/scrapers/especifico/run`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ numeros: lista })
+      })
+      const d = await r.json()
+      setResult({ success: d.success !== false, message: d.message || (d.success !== false ? `Scraper iniciado para ${lista.length} licitaciones` : 'Error') })
+    } catch (e) {
+      setResult({ success: false, message: e.message })
+    }
+    setRunning(false)
+  }
+
+  return (
+    <div className="bg-gradient-to-r from-emerald-500/5 to-cyan-500/5 border border-emerald-500/20 rounded-xl p-5">
+      <div className="flex items-start gap-4">
+        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0">
+          <Search className="w-5 h-5 text-emerald-400" />
+        </div>
+        <div className="flex-1">
+          <h3 className="text-sm font-semibold text-white mb-1">Extraer Licitación Específica</h3>
+          <p className="text-xs text-gray-400 mb-3">Ingresá uno o más números de procedimiento para extraerlos de SICOP y guardarlos en la base de datos.</p>
+          
+          <textarea
+            value={numeros}
+            onChange={e => setNumeros(e.target.value)}
+            placeholder="Ej: 2025LY-000007-0006100001&#10;2025CD-000123-0001200001&#10;(uno por línea o separados por coma)"
+            rows={3}
+            className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 font-mono focus:outline-none focus:border-emerald-500/50 mb-3 resize-none"
+          />
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={ejecutar}
+              disabled={running || !numeros.trim()}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 transition-colors disabled:opacity-50"
+            >
+              {running ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+              {running ? 'Extrayendo...' : 'Extraer de SICOP'}
+            </button>
+            <span className="text-xs text-gray-500">
+              {numeros.split(/[\n,;]+/).map(n => n.trim()).filter(Boolean).length} licitaciones
+            </span>
+          </div>
+
+          {result && (
+            <div className={`mt-3 text-xs px-3 py-2 rounded-lg ${result.success ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+              {result.success ? <CheckCircle2 className="w-3 h-3 inline mr-1" /> : <XCircle className="w-3 h-3 inline mr-1" />}
+              {result.message}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function ScraperPrincipal() {
   const [serverStatus, setServerStatus] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -456,6 +526,9 @@ export default function ScraperPrincipal() {
         <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>
       ) : (
         <>
+          {/* Extraer licitación específica */}
+          <ExtractSpecific />
+
           {/* Chain execution */}
           <ChainExecution onChainComplete={handleChainComplete} />
 
