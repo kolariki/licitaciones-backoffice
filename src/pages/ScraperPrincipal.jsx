@@ -143,9 +143,9 @@ const SCRAPERS = [
 
 const CHAIN_STEPS = [
   { id: 'faltantes', name: 'Scraper Faltantes', endpoint: '/api/scrapers/faltantes/run' },
-  { id: 'alertas', name: 'Verificación de Alertas', endpoint: '/api/alertas/run' },
   { id: 'codigosProductos', name: 'Actualizar Códigos de Productos', endpoint: '/api/actualizar-codigos-productos' },
   { id: 'codigosClasificacion', name: 'Verificar Códigos de Clasificación', endpoint: '/api/codigos/verificar' },
+  { id: 'alertas', name: 'Verificación de Alertas (genera preview)', endpoint: '/api/alertas/run' },
 ]
 
 const colorMap = {
@@ -346,7 +346,7 @@ function ChainExecution({ onChainComplete }) {
           </div>
           <div>
             <h3 className="text-sm font-semibold text-white">Cadena de Ejecución</h3>
-            <p className="text-xs text-gray-400">Faltantes → Alertas → Códigos Productos → Códigos Clasificación</p>
+            <p className="text-xs text-gray-400">Faltantes → Códigos Productos → Códigos Clasificación → Alertas (preview) · Cron: 12:00 y 18:00 CR</p>
           </div>
         </div>
         <button
