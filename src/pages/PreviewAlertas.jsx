@@ -229,8 +229,8 @@ export default function PreviewAlertas() {
                         {alerta?.tipo || 'tipo'}
                       </span>
                       {alerta?.perfilNombre && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold text-white border" style={{ backgroundColor: (alerta.perfilColor || '#1a3a5c') + '30', borderColor: (alerta.perfilColor || '#1a3a5c') + '50', color: alerta.perfilColor || '#a0aec0' }}>
-                          📋 {alerta.perfilNombre}
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold border border-gray-300" style={{ backgroundColor: '#ffffff', color: alerta.perfilColor || '#1a3a5c' }}>
+                          PERFIL: {alerta.perfilNombre.toUpperCase()}
                         </span>
                       )}
                     </div>
@@ -280,6 +280,11 @@ export default function PreviewAlertas() {
                             )}
                             {lic.razonCoincidencia && (
                               <span className="text-[10px] text-gray-500 italic">{lic.razonCoincidencia}</span>
+                            )}
+                            {alerta?.perfilNombre && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold border border-gray-300" style={{ backgroundColor: '#ffffff', color: alerta.perfilColor || '#1a3a5c' }}>
+                                PERFIL: {alerta.perfilNombre.toUpperCase()}
+                              </span>
                             )}
                           </div>
                           <h3 className="text-sm font-medium text-white mt-1.5 line-clamp-2">{lic.titulo || lic.objeto || '—'}</h3>
