@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Bell, Send, Loader2, RefreshCw, ExternalLink, Check, AlertTriangle, FileText, DollarSign, Calendar, Building2, Hash, Tag, User, Mail, ChevronDown, ChevronUp } from 'lucide-react'
+import { Bell, Send, Loader2, RefreshCw, ExternalLink, Check, AlertTriangle, FileText, DollarSign, Calendar, Building2, Hash, Tag, User, Mail, ChevronDown, ChevronUp, FlaskConical } from 'lucide-react'
 
 const SCRAPER_URL = 'https://web-production-0dbf.up.railway.app'
 
@@ -15,6 +15,8 @@ export default function PreviewAlertas() {
   const [result, setResult] = useState(null)
   const [horasAtras, setHorasAtras] = useState(12)
   const [filtroPerfil, setFiltroPerfil] = useState('todas') // 'todas' | 'con_perfil' | 'sin_perfil'
+  const [runningTest, setRunningTest] = useState(false)
+  const [testOutput, setTestOutput] = useState(null)
 
   const fetchPayloads = async () => {
     setLoading(true)
@@ -60,6 +62,26 @@ export default function PreviewAlertas() {
       setResult({ success: false, message: e.message })
     }
     setRunningAlertas(false)
+  }
+
+  const ejecutarTest = async () => {
+    setRunningTest(true)
+    setResult(null)
+    setTestOutput(null)
+    try {
+      const r = await fetch(`${SCRAPER_URL}/api/alertas/test`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ horasAtras })
+      })
+      const d = await r.json()
+      setResult({ success: d.success, message: d.message || 'Test completado' })
+      setTestOutput(d.output || null)
+      setTimeout(() => fetchPayloads(), 1000)
+    } catch (e) {
+      setResult({ success: false, message: e.message })
+    }
+    setRunningTest(false)
   }
 
   const enviarIndividual = async (alertaId, usuarioId, numeroProceso, licitacionId, payloadFilename) => {
@@ -169,6 +191,11 @@ export default function PreviewAlertas() {
             {runningAlertas ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bell className="w-3.5 h-3.5" />}
             Verificar Alertas
           </button>
+          <button onClick={ejecutarTest} disabled={runningTest}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-purple-300 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 transition-colors disabled:opacity-50">
+            {runningTest ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FlaskConical className="w-3.5 h-3.5" />}
+            Generar Perfiles
+          </button>
           <button onClick={regenerarPreview} disabled={regenerating}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-amber-300 bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/30 transition-colors disabled:opacity-50">
             {regenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
@@ -186,6 +213,17 @@ export default function PreviewAlertas() {
         <div className={`text-xs px-3 py-2 rounded-lg flex items-center gap-2 ${result.success ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
           {result.success ? <Check className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
           {result.message}
+        </div>
+      )}
+
+      {/* Test Output */}
+      {testOutput && (
+        <div className="bg-gray-900 border border-purple-500/20 rounded-xl p-3">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-purple-400 flex items-center gap-1"><FlaskConical className="w-3 h-3" /> Output del Test</span>
+            <button onClick={() => setTestOutput(null)} className="text-xs text-gray-500 hover:text-gray-300">Cerrar</button>
+          </div>
+          <pre className="text-[10px] text-gray-400 overflow-auto max-h-64 whitespace-pre-wrap font-mono">{testOutput}</pre>
         </div>
       )}
 
