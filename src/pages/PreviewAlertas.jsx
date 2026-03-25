@@ -14,6 +14,7 @@ export default function PreviewAlertas() {
   const [expandedPayloads, setExpandedPayloads] = useState({})
   const [result, setResult] = useState(null)
   const [horasAtras, setHorasAtras] = useState(12)
+  const [filtroPerfil, setFiltroPerfil] = useState('todas') // 'todas' | 'con_perfil' | 'sin_perfil'
 
   const fetchPayloads = async () => {
     setLoading(true)
@@ -119,13 +120,31 @@ export default function PreviewAlertas() {
 
   const formatMonto = (m) => m || '—'
 
-  // Stats
-  const totalPayloads = payloads.length
-  const totalLicitaciones = payloads.reduce((acc, p) => {
+  // Filter payloads by profile
+  const filteredPayloads = payloads.filter(p => {
+    if (filtroPerfil === 'todas') return true
+    const alerta = parseField(p.alerta)
+    const tienePerfil = !!alerta?.perfilNombre
+    if (filtroPerfil === 'con_perfil') return tienePerfil
+    if (filtroPerfil === 'sin_perfil') return !tienePerfil
+    // Filter by specific profile name: perfil_<nombre>
+    if (filtroPerfil.startsWith('perfil_')) return alerta?.perfilNombre === filtroPerfil.replace('perfil_', '')
+    return true
+  })
+
+  // Unique profile names for display
+  const perfilesUnicos = [...new Set(payloads.map(p => {
+    const alerta = parseField(p.alerta)
+    return alerta?.perfilNombre || null
+  }).filter(Boolean))]
+
+  // Stats (based on filtered)
+  const totalPayloads = filteredPayloads.length
+  const totalLicitaciones = filteredPayloads.reduce((acc, p) => {
     const lics = parseField(p.licitaciones)
     return acc + (Array.isArray(lics) ? lics.length : 0)
   }, 0)
-  const uniqueUsers = [...new Set(payloads.map(p => {
+  const uniqueUsers = [...new Set(filteredPayloads.map(p => {
     const u = parseField(p.usuario)
     return u?.email || u?._id || ''
   }))].length
@@ -186,6 +205,40 @@ export default function PreviewAlertas() {
         </div>
       </div>
 
+      {/* Filtro por perfil */}
+      {!loading && payloads.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs text-gray-500">Filtrar:</span>
+          {[
+            { key: 'todas', label: 'Todas' },
+            { key: 'con_perfil', label: 'Con Perfil' },
+            { key: 'sin_perfil', label: 'Sin Perfil' }
+          ].map(f => (
+            <button key={f.key} onClick={() => setFiltroPerfil(f.key)}
+              className={`text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${filtroPerfil === f.key ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'}`}>
+              {f.label}
+            </button>
+          ))}
+          {perfilesUnicos.length > 0 && (
+            <>
+              <span className="text-gray-700 mx-1">|</span>
+              {perfilesUnicos.map(nombre => {
+                const perfilPayload = payloads.find(p => parseField(p.alerta)?.perfilNombre === nombre)
+                const color = parseField(perfilPayload?.alerta)?.perfilColor || '#1a3a5c'
+                const count = payloads.filter(p => parseField(p.alerta)?.perfilNombre === nombre).length
+                return (
+                  <button key={nombre} onClick={() => setFiltroPerfil(filtroPerfil === `perfil_${nombre}` ? 'todas' : `perfil_${nombre}`)}
+                    className={`text-[10px] px-2 py-0.5 rounded-full font-semibold border transition-colors ${filtroPerfil === `perfil_${nombre}` ? 'bg-white border-gray-300' : 'bg-gray-800 border-gray-700 hover:bg-gray-700'}`}
+                    style={{ color }}>
+                    {nombre.toUpperCase()} ({count})
+                  </button>
+                )
+              })}
+            </>
+          )}
+        </div>
+      )}
+
       {/* Loading */}
       {loading && (
         <div className="flex items-center justify-center py-12">
@@ -203,8 +256,16 @@ export default function PreviewAlertas() {
         </div>
       )}
 
+      {/* Empty filtered */}
+      {!loading && payloads.length > 0 && filteredPayloads.length === 0 && (
+        <div className="text-center py-8 text-gray-500">
+          <p className="text-sm">No hay alertas que coincidan con el filtro seleccionado</p>
+          <button onClick={() => setFiltroPerfil('todas')} className="text-xs text-amber-400 hover:text-amber-300 mt-1">Ver todas</button>
+        </div>
+      )}
+
       {/* Payload cards */}
-      {!loading && payloads.map((payload, idx) => {
+      {!loading && filteredPayloads.map((payload, idx) => {
         const usuario = parseField(payload.usuario)
         const alerta = parseField(payload.alerta)
         const licitaciones = parseField(payload.licitaciones) || []
