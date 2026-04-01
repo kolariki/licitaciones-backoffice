@@ -1,6 +1,6 @@
 import React from 'react'
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom'
-import { LayoutDashboard, Users, Bell, BarChart3, FileText, Menu, Layers, Send, LogOut, MailCheck, Server, Eye, Database } from 'lucide-react'
+import { LayoutDashboard, Users, Bell, BarChart3, FileText, Menu, Layers, Send, LogOut, MailCheck, Server, Eye, Database, Mail } from 'lucide-react'
 import { AuthProvider, useAuth } from './hooks/useAuth'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
@@ -14,6 +14,7 @@ import AlertasEnviadas from './pages/AlertasEnviadas'
 import ScraperPrincipal from './pages/ScraperPrincipal'
 import PreviewAlertas from './pages/PreviewAlertas'
 import LicitacionesCR from './pages/LicitacionesCR'
+import EmailMasivo from './pages/EmailMasivo'
 
 const SUPERADMIN_EMAIL = 'ivankolariki1990@gmail.com'
 
@@ -28,6 +29,7 @@ const navItems = [
   { to: '/scraper', icon: Server, label: 'Scraper Principal', superadminOnly: true },
   { to: '/preview-alertas', icon: Eye, label: 'Preview Alertas' },
   { to: '/licitaciones-cr', icon: Database, label: 'BD Licitaciones CR' },
+  { to: '/email-masivo', icon: Mail, label: 'Email Masivo' },
 ]
 
 function Sidebar({ open, setOpen, alertsPending, onDismissAlerts }) {
@@ -158,6 +160,7 @@ function ProtectedApp() {
             <Route path="/scraper" element={<SuperadminRoute><ScraperPrincipal /></SuperadminRoute>} />
             <Route path="/preview-alertas" element={<PreviewAlertas />} />
             <Route path="/licitaciones-cr" element={<LicitacionesCR />} />
+            <Route path="/email-masivo" element={<EmailMasivo />} />
           </Routes>
         </main>
       </div>
