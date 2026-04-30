@@ -648,13 +648,13 @@ function TestIvanCard() {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
               <div className="bg-black/30 border border-amber-700/30 rounded-lg p-2">
                 <p className="text-[10px] text-gray-500 uppercase">📥 Origen</p>
-                <p className="text-sm font-bold text-white">{estado?.from?.alertas ?? '–'} alertas</p>
+                <p className="text-sm font-bold text-white">{estado?.from?.alertas ?? '–'} alertas · {estado?.from?.perfiles ?? '–'} perfiles</p>
                 <p className="text-[10px] text-gray-500">{estado?.from?.enviadas7d ?? '–'} envíos 7d</p>
               </div>
               <div className="bg-black/30 border border-amber-700/30 rounded-lg p-2">
                 <p className="text-[10px] text-gray-500 uppercase">📤 Destino</p>
                 <p className="text-sm font-bold text-white">{estado?.to?.alertas ?? '–'} alertas <span className="text-amber-400">({estado?.to?.alertasClonadas ?? '–'} clones)</span></p>
-                <p className="text-[10px] text-gray-500">{estado?.to?.enviadas7d ?? '–'} envíos 7d</p>
+                <p className="text-[10px] text-gray-500">{estado?.to?.perfiles ?? '–'} perfiles <span className="text-amber-400">({estado?.to?.perfilesClonados ?? '–'} clones)</span> · {estado?.to?.enviadas7d ?? '–'} env 7d</p>
               </div>
               <div className="bg-black/30 border border-amber-700/30 rounded-lg p-2">
                 <p className="text-[10px] text-gray-500 uppercase">📦 Payloads pendientes</p>
