@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-import { Play, Loader2, CheckCircle2, XCircle, Clock, Server, Search, Bell, Calendar, Star, FileText, Download, BarChart3, Hash, Database, RefreshCw, Activity, Terminal, ChevronDown, ChevronUp, Zap } from 'lucide-react'
+import { Play, Loader2, CheckCircle2, XCircle, Clock, Server, Search, Bell, Calendar, Star, FileText, Download, BarChart3, Hash, Database, RefreshCw, Activity, Terminal, ChevronDown, ChevronUp, Zap, FlaskConical, Send, Eye, GitCompare, Trash2, Copy } from 'lucide-react'
 
 const SCRAPER_URL = 'https://web-production-0dbf.up.railway.app'
 
@@ -532,6 +532,9 @@ export default function ScraperPrincipal() {
           {/* Chain execution */}
           <ChainExecution onChainComplete={handleChainComplete} />
 
+          {/* 🧪 Test auto-envío Ivan ← Arboleda */}
+          <TestIvanCard />
+
           {/* Server stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
@@ -563,6 +566,145 @@ export default function ScraperPrincipal() {
           <LogsPanel />
         </>
       )}
+    </div>
+  )
+}
+
+// 🧪 Card del experimento "auto-envío de alta confianza" en cuenta de Ivan
+function TestIvanCard() {
+  const [estado, setEstado] = useState(null)
+  const [busy, setBusy] = useState('')
+  const [output, setOutput] = useState('')
+  const [horasAtras, setHorasAtras] = useState(24)
+  const [diasComparar, setDiasComparar] = useState(7)
+
+  const refrescar = useCallback(async () => {
+    setBusy('estado')
+    try {
+      const r = await fetch(`${SCRAPER_URL}/api/test-ivan/estado`)
+      const d = await r.json()
+      if (d.success) setEstado(d)
+      else setOutput('No se pudo cargar estado: ' + (d.error || ''))
+    } catch (e) {
+      setOutput('Error: ' + e.message)
+    } finally {
+      setBusy('')
+    }
+  }, [])
+
+  useEffect(() => { refrescar() }, [refrescar])
+
+  const ejecutar = async (label, key, path, body) => {
+    setBusy(key)
+    setOutput(`▶ ${label}\n…`)
+    try {
+      const r = await fetch(`${SCRAPER_URL}${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body || {})
+      })
+      const d = await r.json()
+      const out = (d.output || '').slice(-20000)
+      setOutput(out + `\n──── exit=${d.code ?? '?'} ${d.success ? '✅' : '❌'} ────`)
+    } catch (e) {
+      setOutput('Error de conexión: ' + e.message)
+    } finally {
+      setBusy('')
+      refrescar()
+    }
+  }
+
+  const Btn = ({ id, onClick, color, icon: Icon, children, danger }) => (
+    <button
+      onClick={onClick}
+      disabled={!!busy}
+      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white transition-colors disabled:opacity-50 ${color}`}
+    >
+      {busy === id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Icon className="w-3.5 h-3.5" />}
+      {children}
+    </button>
+  )
+
+  return (
+    <div className="bg-gradient-to-br from-amber-950/40 to-orange-950/30 border-2 border-dashed border-amber-600/50 rounded-xl overflow-hidden">
+      <div className="p-5">
+        <div className="flex items-start gap-4">
+          <div className="w-11 h-11 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0">
+            <FlaskConical className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="text-sm font-semibold text-white">🧪 Test Auto-Envío (Ivan ← Arboleda)</h3>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400">Experimental</span>
+            </div>
+            <p className="text-xs text-gray-400 mb-3">
+              Experimento aislado del auto-envío de alta confianza usando alertas de
+              <code className="mx-1 text-amber-400">cr.arboledaserena@gmail.com</code> clonadas en
+              <code className="mx-1 text-amber-400">ivankolariki1990@gmail.com</code>.
+              Cuando la cobertura supere el 90% pasamos a producción.
+            </p>
+
+            {/* Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
+              <div className="bg-black/30 border border-amber-700/30 rounded-lg p-2">
+                <p className="text-[10px] text-gray-500 uppercase">📥 Origen</p>
+                <p className="text-sm font-bold text-white">{estado?.from?.alertas ?? '–'} alertas</p>
+                <p className="text-[10px] text-gray-500">{estado?.from?.enviadas7d ?? '–'} envíos 7d</p>
+              </div>
+              <div className="bg-black/30 border border-amber-700/30 rounded-lg p-2">
+                <p className="text-[10px] text-gray-500 uppercase">📤 Destino</p>
+                <p className="text-sm font-bold text-white">{estado?.to?.alertas ?? '–'} alertas <span className="text-amber-400">({estado?.to?.alertasClonadas ?? '–'} clones)</span></p>
+                <p className="text-[10px] text-gray-500">{estado?.to?.enviadas7d ?? '–'} envíos 7d</p>
+              </div>
+              <div className="bg-black/30 border border-amber-700/30 rounded-lg p-2">
+                <p className="text-[10px] text-gray-500 uppercase">📦 Payloads pendientes</p>
+                <p className="text-sm font-bold text-white">{estado?.payloadsPendientes?.archivos ?? '–'} archivos · {estado?.payloadsPendientes?.total ?? '–'} lics</p>
+                <p className="text-[10px] text-amber-400">🚦 alta {estado?.payloadsPendientes?.altas ?? '–'} · media {estado?.payloadsPendientes?.medias ?? '–'}</p>
+              </div>
+            </div>
+
+            {/* Inputs */}
+            <div className="flex flex-wrap items-center gap-3 mb-3 text-xs">
+              <label className="flex items-center gap-2">
+                <span className="text-gray-400">Horas atrás (verificar):</span>
+                <input type="number" min={1} max={720} value={horasAtras}
+                  onChange={e => setHorasAtras(parseInt(e.target.value) || 24)}
+                  className="w-16 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white text-center" />
+              </label>
+              <label className="flex items-center gap-2">
+                <span className="text-gray-400">Días (comparar):</span>
+                <input type="number" min={1} max={30} value={diasComparar}
+                  onChange={e => setDiasComparar(parseInt(e.target.value) || 7)}
+                  className="w-16 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white text-center" />
+              </label>
+            </div>
+
+            {/* Botones */}
+            <div className="flex flex-wrap gap-2">
+              <Btn id="estado" onClick={refrescar} color="bg-gray-700 hover:bg-gray-600" icon={RefreshCw}>Refrescar</Btn>
+              <Btn id="clonar" onClick={() => ejecutar('Clonar alertas', 'clonar', '/api/test-ivan/clonar', {})} color="bg-blue-600 hover:bg-blue-700" icon={Copy}>Clonar alertas</Btn>
+              <Btn id="reset" onClick={() => {
+                if (!window.confirm('Borra todas las alertas con tag [CLONE-FROM-ARBOLEDA] de Ivan y las vuelve a clonar. ¿Continuar?')) return
+                ejecutar('Reset y clonar', 'reset', '/api/test-ivan/clonar', { reset: true })
+              }} color="bg-red-600 hover:bg-red-700" icon={Trash2}>Reset y clonar</Btn>
+              <Btn id="verificar" onClick={() => ejecutar(`Verificar ${horasAtras}h`, 'verificar', '/api/test-ivan/verificar', { horasAtras })} color="bg-amber-600 hover:bg-amber-700" icon={Search}>Verificar ({horasAtras}h)</Btn>
+              <Btn id="dry" onClick={() => ejecutar('Auto-enviar DRY', 'dry', '/api/test-ivan/auto-enviar', { dry: true })} color="bg-purple-600 hover:bg-purple-700" icon={Eye}>Auto-enviar DRY</Btn>
+              <Btn id="real" onClick={() => {
+                if (!window.confirm('Esto va a enviar emails REALES a ivankolariki1990@gmail.com con todas las licitaciones de alta confianza. ¿Continuar?')) return
+                ejecutar('Auto-enviar REAL', 'real', '/api/test-ivan/auto-enviar', { dry: false })
+              }} color="bg-emerald-600 hover:bg-emerald-700" icon={Send}>Auto-enviar REAL</Btn>
+              <Btn id="comparar" onClick={() => ejecutar(`Comparar ${diasComparar}d`, 'comparar', '/api/test-ivan/comparar', { dias: diasComparar })} color="bg-cyan-600 hover:bg-cyan-700" icon={GitCompare}>Comparar ({diasComparar}d)</Btn>
+            </div>
+
+            {/* Output */}
+            {output && (
+              <pre className="mt-3 bg-black/60 text-gray-300 text-[11px] leading-relaxed rounded-lg p-3 max-h-80 overflow-auto whitespace-pre-wrap">
+{output}
+              </pre>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
