@@ -1,6 +1,6 @@
 import React from 'react'
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom'
-import { LayoutDashboard, Users, Bell, BarChart3, FileText, Menu, Layers, Send, LogOut, MailCheck, Server, Eye, Database, Mail } from 'lucide-react'
+import { LayoutDashboard, Users, Bell, BarChart3, FileText, Menu, Layers, Send, LogOut, MailCheck, Server, Eye, Database, Mail, Zap } from 'lucide-react'
 import { AuthProvider, useAuth } from './hooks/useAuth'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
@@ -15,6 +15,7 @@ import ScraperPrincipal from './pages/ScraperPrincipal'
 import PreviewAlertas from './pages/PreviewAlertas'
 import LicitacionesCR from './pages/LicitacionesCR'
 import EmailMasivo from './pages/EmailMasivo'
+import AutoEnvios from './pages/AutoEnvios'
 
 const SUPERADMIN_EMAIL = 'ivankolariki1990@gmail.com'
 
@@ -26,6 +27,7 @@ const navItems = [
   { to: '/licitaciones', icon: FileText, label: 'Licitaciones' },
   { to: '/recomendaciones', icon: Send, label: 'Recomendaciones' },
   { to: '/alertas-enviadas', icon: MailCheck, label: 'Alertas Enviadas' },
+  { to: '/auto-envios', icon: Zap, label: 'Auto-Envíos', superadminOnly: true },
   { to: '/scraper', icon: Server, label: 'Scraper Principal', superadminOnly: true },
   { to: '/preview-alertas', icon: Eye, label: 'Preview Alertas' },
   { to: '/licitaciones-cr', icon: Database, label: 'BD Licitaciones CR' },
@@ -157,6 +159,7 @@ function ProtectedApp() {
             <Route path="/licitaciones" element={<Licitaciones />} />
             <Route path="/recomendaciones" element={<Recomendaciones />} />
             <Route path="/alertas-enviadas" element={<AlertasEnviadas />} />
+            <Route path="/auto-envios" element={<SuperadminRoute><AutoEnvios /></SuperadminRoute>} />
             <Route path="/scraper" element={<SuperadminRoute><ScraperPrincipal /></SuperadminRoute>} />
             <Route path="/preview-alertas" element={<PreviewAlertas />} />
             <Route path="/licitaciones-cr" element={<LicitacionesCR />} />
