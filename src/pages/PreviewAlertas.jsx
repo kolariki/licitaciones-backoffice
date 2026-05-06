@@ -180,11 +180,23 @@ export default function PreviewAlertas() {
           <p className="text-gray-400 text-sm mt-1">Revisa y envía alertas generadas a usuarios</p>
         </div>
         <div className="flex gap-2 flex-wrap items-center">
-          <div className="flex items-center gap-1.5 bg-gray-800 rounded-lg border border-gray-700 px-2 py-1">
+          <div className="flex items-center gap-1.5 bg-gray-800 rounded-lg border border-gray-700 px-2 py-1" title="Ventana de búsqueda hacia atrás (en horas). Atajos: 24=1d · 168=7d · 720=30d">
             <Calendar className="w-3.5 h-3.5 text-gray-400" />
-            <input type="number" min="1" max="72" value={horasAtras} onChange={e => setHorasAtras(Math.max(1, parseInt(e.target.value) || 4))}
-              className="w-12 bg-transparent text-xs text-white text-center outline-none" />
+            <input type="number" min="1" max="2160" value={horasAtras}
+              onChange={e => {
+                const v = parseInt(e.target.value)
+                if (Number.isNaN(v)) return setHorasAtras('')
+                setHorasAtras(Math.min(2160, Math.max(1, v)))
+              }}
+              onBlur={e => { if (!e.target.value) setHorasAtras(12) }}
+              className="w-16 bg-transparent text-xs text-white text-center outline-none" />
             <span className="text-xs text-gray-400">hs</span>
+          </div>
+          <div className="hidden md:flex items-center gap-1 text-[10px] text-gray-500">
+            <button onClick={() => setHorasAtras(24)} className="px-1.5 py-0.5 rounded hover:bg-gray-700 hover:text-white">1d</button>
+            <button onClick={() => setHorasAtras(72)} className="px-1.5 py-0.5 rounded hover:bg-gray-700 hover:text-white">3d</button>
+            <button onClick={() => setHorasAtras(168)} className="px-1.5 py-0.5 rounded hover:bg-gray-700 hover:text-white">7d</button>
+            <button onClick={() => setHorasAtras(720)} className="px-1.5 py-0.5 rounded hover:bg-gray-700 hover:text-white">30d</button>
           </div>
           <button onClick={ejecutarAlertas} disabled={runningAlertas}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 transition-colors disabled:opacity-50">
