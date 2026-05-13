@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-import { Play, Loader2, CheckCircle2, XCircle, Clock, Server, Search, Bell, Calendar, Star, FileText, Download, BarChart3, Hash, Database, RefreshCw, Activity, Terminal, ChevronDown, ChevronUp, Zap, FlaskConical, Send, Eye, GitCompare, Trash2, Copy } from 'lucide-react'
+import { Play, Loader2, CheckCircle2, XCircle, Clock, Server, Search, Bell, Calendar, Star, FileText, Download, BarChart3, Hash, Database, RefreshCw, Activity, Terminal, ChevronDown, ChevronUp, Zap, FlaskConical, Send, Eye, GitCompare, Trash2, Copy, AlarmClockCheck } from 'lucide-react'
+import { API_URL } from '../config'
 
 const SCRAPER_URL = 'https://web-production-0dbf.up.railway.app'
+// Token admin para endpoints en licitaciones-back (no en scraper-service).
+// Configurar en .env.local del backoffice: VITE_ADMIN_TOKEN=xxxx
+const ADMIN_TOKEN = import.meta.env.VITE_ADMIN_TOKEN || ''
 
 const SCRAPERS = [
   {
@@ -138,6 +142,27 @@ const SCRAPERS = [
     features: ['Detecta TITULO_NO_DISPONIBLE, fechas nulas, etc.', 'Consulta SICOP proxy por cada licitación', 'Extrae título, entidad, fechas, monto, estado', 'Actualiza los registros en la BD'],
     endpoint: '/api/licitaciones/completar-datos',
     color: 'lime'
+  },
+  {
+    // 🔄 Detector semanal de prórrogas/extensiones SICOP
+    // Vive en `licitaciones-back` (NO en scraper-service) → usamos baseUrl override.
+    // Cron automático: lunes 6 AM hora Costa Rica. Este botón es para correrlo manualmente.
+    id: 'detectarExtensiones',
+    name: 'Detectar Prórrogas / Extensiones SICOP',
+    desc: 'Busca licitaciones que la institución extendió tras la fecha de cierre original, actualiza la fechaCierre en la BD y notifica por email a los usuarios que las tienen en favoritos.',
+    icon: AlarmClockCheck,
+    features: [
+      'Recorre 100 páginas (~1000 resultados) de /concursos',
+      'Compara con licitaciones cuya fechaCierre cae en ventana de 7 días',
+      'Actualiza fechaCierre y agrega al historialFechaCierre[]',
+      'Notifica por email a usuarios con la licitación en favoritos',
+      'Si estaba "cerrada" y se prorrogó, vuelve a "abierta"',
+      '🕒 Cron automático: Lunes 6:00 AM Costa Rica'
+    ],
+    endpoint: '/api/admin/detectar-extensiones',
+    baseUrl: API_URL,            // 👈 sobreescribe SCRAPER_URL → va a licitaciones-back
+    requiresAdminToken: true,    // 👈 manda header x-admin-token
+    color: 'amber'
   }
 ]
 
@@ -204,11 +229,32 @@ function ScraperCard({ scraper, serverStatus }) {
         body = JSON.stringify({ maxPages })
       } else if (scraper.id === 'alertas' && !isExtra) {
         body = JSON.stringify({ horasAtras })
+      } else if (scraper.id === 'detectarExtensiones' && !isExtra) {
+        body = JSON.stringify({
+          ventanaDias: 7,
+          maxPaginas: 100,
+          dryRun: false,
+          skipNotify: false
+        })
       }
-      const r = await fetch(`${SCRAPER_URL}${endpoint}`, { 
+
+      // Algunos scrapers (los que viven en licitaciones-back en vez del scraper-service)
+      // sobreescriben la baseUrl y requieren el admin token.
+      const base = scraper.baseUrl || SCRAPER_URL
+      const headers = body ? { 'Content-Type': 'application/json' } : {}
+      if (scraper.requiresAdminToken) {
+        if (!ADMIN_TOKEN) {
+          setRes({ success: false, message: 'Falta VITE_ADMIN_TOKEN en el .env del backoffice' })
+          setR(false)
+          return
+        }
+        headers['x-admin-token'] = ADMIN_TOKEN
+      }
+
+      const r = await fetch(`${base}${endpoint}`, {
         method: 'POST',
-        headers: body ? { 'Content-Type': 'application/json' } : {},
-        body 
+        headers,
+        body
       })
       const d = await r.json()
       setRes({ success: d.success !== false, message: d.message || (d.success !== false ? 'Ejecutado correctamente' : 'Error') })
