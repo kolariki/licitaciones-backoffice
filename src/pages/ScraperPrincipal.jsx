@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Play, Loader2, CheckCircle2, XCircle, Clock, Server, Search, Bell, Calendar, Star, FileText, Download, BarChart3, Hash, Database, RefreshCw, Activity, Terminal, ChevronDown, ChevronUp, Zap, FlaskConical, Send, Eye, GitCompare, Trash2, Copy, AlarmClockCheck } from 'lucide-react'
-import { API_URL } from '../config'
-
 const SCRAPER_URL = 'https://web-production-0dbf.up.railway.app'
 
 const SCRAPERS = [
@@ -141,23 +139,22 @@ const SCRAPERS = [
     color: 'lime'
   },
   {
-    // 🔄 Detector semanal de prórrogas/extensiones SICOP
-    // Vive en `licitaciones-back` (NO en scraper-service) → usamos baseUrl override.
-    // Cron automático: lunes 6 AM hora Costa Rica. Este botón es para correrlo manualmente.
+    // 🔄 Detector semanal de prórrogas/extensiones — solo favoritos CR
+    // Usa proxy SICOP HTTP (mismo patrón que el scraper de estados de favoritos)
+    // Vive en scraper-sicop-principal → usa el SCRAPER_URL default.
     id: 'detectarExtensiones',
-    name: 'Detectar Prórrogas / Extensiones SICOP',
-    desc: 'Busca licitaciones que la institución extendió tras la fecha de cierre original, actualiza la fechaCierre en la BD y notifica por email a los usuarios que las tienen en favoritos.',
+    name: 'Detectar Prórrogas de Favoritos',
+    desc: 'Detecta licitaciones favoritas cuya fecha de apertura fue extendida en SICOP. Actualiza la BD y avisa por email al usuario que la tiene en favoritos.',
     icon: AlarmClockCheck,
     features: [
-      'Recorre 100 páginas (~1000 resultados) de /concursos',
-      'Compara con licitaciones cuya fechaCierre cae en ventana de 7 días',
-      'Actualiza fechaCierre y agrega al historialFechaCierre[]',
-      'Notifica por email a usuarios con la licitación en favoritos',
-      'Si estaba "cerrada" y se prorrogó, vuelve a "abierta"',
+      'Recorre solo favoritos CR con sicoopId (lo que importa al usuario)',
+      'Consulta proxy SICOP por cartel (HTTP directo, sin Puppeteer)',
+      'Parsea "Fecha/hora de apertura de ofertas" del HTML',
+      'Si SICOP > BD: update fechaCierre + historialFechaCierre[]',
+      'Notifica por email al dueño del favorito',
       '🕒 Cron automático: Lunes 6:00 AM Costa Rica'
     ],
-    endpoint: '/api/admin/detectar-extensiones',
-    baseUrl: API_URL,            // 👈 sobreescribe SCRAPER_URL → va a licitaciones-back
+    endpoint: '/api/extensiones/run',
     color: 'amber'
   }
 ]
@@ -225,19 +222,9 @@ function ScraperCard({ scraper, serverStatus }) {
         body = JSON.stringify({ maxPages })
       } else if (scraper.id === 'alertas' && !isExtra) {
         body = JSON.stringify({ horasAtras })
-      } else if (scraper.id === 'detectarExtensiones' && !isExtra) {
-        body = JSON.stringify({
-          ventanaDias: 7,
-          maxPaginas: 100,
-          dryRun: false,
-          skipNotify: false
-        })
       }
 
-      // Algunos scrapers viven en licitaciones-back en vez del scraper-service
-      // y sobreescriben la baseUrl (ej. detector de prórrogas).
-      const base = scraper.baseUrl || SCRAPER_URL
-      const r = await fetch(`${base}${endpoint}`, {
+      const r = await fetch(`${SCRAPER_URL}${endpoint}`, {
         method: 'POST',
         headers: body ? { 'Content-Type': 'application/json' } : {},
         body
