@@ -3,9 +3,6 @@ import { Play, Loader2, CheckCircle2, XCircle, Clock, Server, Search, Bell, Cale
 import { API_URL } from '../config'
 
 const SCRAPER_URL = 'https://web-production-0dbf.up.railway.app'
-// Token admin para endpoints en licitaciones-back (no en scraper-service).
-// Configurar en .env.local del backoffice: VITE_ADMIN_TOKEN=xxxx
-const ADMIN_TOKEN = import.meta.env.VITE_ADMIN_TOKEN || ''
 
 const SCRAPERS = [
   {
@@ -161,7 +158,6 @@ const SCRAPERS = [
     ],
     endpoint: '/api/admin/detectar-extensiones',
     baseUrl: API_URL,            // 👈 sobreescribe SCRAPER_URL → va a licitaciones-back
-    requiresAdminToken: true,    // 👈 manda header x-admin-token
     color: 'amber'
   }
 ]
@@ -238,22 +234,12 @@ function ScraperCard({ scraper, serverStatus }) {
         })
       }
 
-      // Algunos scrapers (los que viven en licitaciones-back en vez del scraper-service)
-      // sobreescriben la baseUrl y requieren el admin token.
+      // Algunos scrapers viven en licitaciones-back en vez del scraper-service
+      // y sobreescriben la baseUrl (ej. detector de prórrogas).
       const base = scraper.baseUrl || SCRAPER_URL
-      const headers = body ? { 'Content-Type': 'application/json' } : {}
-      if (scraper.requiresAdminToken) {
-        if (!ADMIN_TOKEN) {
-          setRes({ success: false, message: 'Falta VITE_ADMIN_TOKEN en el .env del backoffice' })
-          setR(false)
-          return
-        }
-        headers['x-admin-token'] = ADMIN_TOKEN
-      }
-
       const r = await fetch(`${base}${endpoint}`, {
         method: 'POST',
-        headers,
+        headers: body ? { 'Content-Type': 'application/json' } : {},
         body
       })
       const d = await r.json()
