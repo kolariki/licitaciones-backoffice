@@ -338,7 +338,11 @@ function ScraperCard({ scraper, serverStatus }) {
   const [runningExtra, setRunningExtra] = useState(false)
   const [result, setResult] = useState(null)
   const [resultExtra, setResultExtra] = useState(null)
-  const [maxPages, setMaxPages] = useState(scraper.id === 'faltantes' ? 25 : 5)
+  const [maxPages, setMaxPages] = useState(
+    scraper.id === 'faltantes' ? 25 :
+    scraper.id === 'fechasApertura' ? 1300 : // default: cubre las ~1264 páginas reales de SICOP
+    5
+  )
   const [horasAtras, setHorasAtras] = useState(8)
 
   const status = scraper.statusKey ? serverStatus?.scrapers?.[scraper.statusKey] : null
@@ -351,7 +355,7 @@ function ScraperCard({ scraper, serverStatus }) {
     setRes(null)
     try {
       let body = undefined
-      if ((scraper.id === 'principal' || scraper.id === 'faltantes') && !isExtra) {
+      if ((scraper.id === 'principal' || scraper.id === 'faltantes' || scraper.id === 'fechasApertura') && !isExtra) {
         body = JSON.stringify({ maxPages })
       } else if (scraper.id === 'alertas' && !isExtra) {
         body = JSON.stringify({ horasAtras })
@@ -421,13 +425,29 @@ function ScraperCard({ scraper, serverStatus }) {
               </div>
             )}
 
-            {(scraper.id === 'principal' || scraper.id === 'faltantes') && (
-              <div className="flex items-center gap-2 mb-2">
-                <label className="text-xs text-gray-400">Páginas:</label>
-                <input type="number" min={1} max={100} value={maxPages} onChange={e => setMaxPages(parseInt(e.target.value) || (scraper.id === 'principal' ? 5 : 25))}
-                  className="w-16 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white text-center" />
-              </div>
-            )}
+            {(scraper.id === 'principal' || scraper.id === 'faltantes' || scraper.id === 'fechasApertura') && (() => {
+              // Cada scraper tiene un default y un máximo distintos:
+              // - principal / faltantes: hasta 100 páginas (suele alcanzar)
+              // - fechasApertura: hasta 1300 (SICOP tiene ~1264 páginas reales)
+              const maxAllowed = scraper.id === 'fechasApertura' ? 1300 : 100
+              const fallback = scraper.id === 'principal' ? 5 : scraper.id === 'faltantes' ? 25 : 1300
+              return (
+                <div className="flex items-center gap-2 mb-2">
+                  <label className="text-xs text-gray-400">Páginas:</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={maxAllowed}
+                    value={maxPages}
+                    onChange={e => setMaxPages(parseInt(e.target.value) || fallback)}
+                    className={`${scraper.id === 'fechasApertura' ? 'w-20' : 'w-16'} bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white text-center`}
+                  />
+                  {scraper.id === 'fechasApertura' && (
+                    <span className="text-[10px] text-gray-500">(SICOP tiene ~1264)</span>
+                  )}
+                </div>
+              )
+            })()}
             {scraper.id === 'alertas' && (
               <div className="flex items-center gap-2 mb-2">
                 <label className="text-xs text-gray-400">Horas atrás:</label>
