@@ -200,6 +200,139 @@ const btnColorMap = {
   rose: 'bg-rose-600 hover:bg-rose-700',
 }
 
+/**
+ * Panel de logs aislado por scraper.
+ *
+ * Polling al endpoint /api/scrapers/logs/:scraperId (que filtra por tag tipo
+ * [principal], [faltantes], [extensiones], etc) — así cada card muestra solo
+ * SUS logs, sin mezclarse con los demás cuando corren varios en paralelo.
+ *
+ * - Comportamiento: muestra las últimas ~200 líneas filtradas. Polling cada
+ *   3 segundos solo cuando el panel está expandido (auto-refresh).
+ * - Usa `lastId` para fetch incremental (no re-trae toda la lista cada vez).
+ * - Autoscroll al final cuando llegan logs nuevos, salvo que el usuario haya
+ *   scrolleado para arriba (pausa el autoscroll).
+ */
+function ScraperLogsPanel({ scraperId, runningHint }) {
+  const [open, setOpen] = useState(false)
+  const [logs, setLogs] = useState([])
+  const [lastId, setLastId] = useState(0)
+  const [isPolling, setIsPolling] = useState(false)
+  const scrollRef = useRef(null)
+  const [autoScroll, setAutoScroll] = useState(true)
+
+  const fetchLogs = useCallback(async () => {
+    try {
+      const url = `${SCRAPER_URL}/api/scrapers/logs/${encodeURIComponent(scraperId)}?lines=200${lastId ? `&sinceId=${lastId}` : ''}`
+      const r = await fetch(url)
+      const d = await r.json()
+      if (!d?.success) return
+      if (!lastId) {
+        // Carga inicial: reemplaza todo
+        setLogs(d.logs || [])
+      } else if (d.logs?.length) {
+        // Append solo los nuevos (deduplica por id)
+        setLogs(prev => {
+          const existingIds = new Set(prev.map(l => l.id))
+          return [...prev, ...d.logs.filter(l => !existingIds.has(l.id))].slice(-300)
+        })
+      }
+      if (d.lastId) setLastId(d.lastId)
+    } catch (e) {
+      // Silent: no spam si el endpoint está caído
+    }
+  }, [scraperId, lastId])
+
+  // Polling cada 3s mientras el panel está abierto. Frecuencia más rápida si
+  // el card está corriendo (runningHint = true).
+  useEffect(() => {
+    if (!open) return
+    setIsPolling(true)
+    fetchLogs()
+    const intervalMs = runningHint ? 1500 : 3000
+    const id = setInterval(fetchLogs, intervalMs)
+    return () => { clearInterval(id); setIsPolling(false) }
+  }, [open, runningHint, fetchLogs])
+
+  // Autoscroll al final cuando llegan logs nuevos
+  useEffect(() => {
+    if (!autoScroll || !scrollRef.current) return
+    scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+  }, [logs, autoScroll])
+
+  // Detectar si el user scrolleó manualmente (para pausar autoscroll)
+  const onScroll = () => {
+    const el = scrollRef.current
+    if (!el) return
+    const enBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40
+    setAutoScroll(enBottom)
+  }
+
+  const limpiarLogs = () => {
+    setLogs([])
+    setLastId(0)
+  }
+
+  return (
+    <div className="border-t border-gray-800">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-5 py-2.5 hover:bg-gray-800/50 transition-colors text-xs text-gray-400"
+      >
+        <span className="flex items-center gap-2">
+          <Terminal className="w-3.5 h-3.5" />
+          Logs ({logs.length})
+          {isPolling && open && <Loader2 className="w-3 h-3 animate-spin text-blue-400" />}
+        </span>
+        {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+      </button>
+      {open && (
+        <div className="px-5 pb-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] uppercase tracking-wider text-gray-500">
+              Refresca cada {runningHint ? '1.5s' : '3s'} · solo logs de este scraper
+            </span>
+            <button
+              onClick={limpiarLogs}
+              className="text-[10px] text-gray-500 hover:text-gray-300 flex items-center gap-1"
+              title="Limpiar la vista (no borra los logs del servidor)"
+            >
+              <Trash2 className="w-3 h-3" /> Limpiar vista
+            </button>
+          </div>
+          <div
+            ref={scrollRef}
+            onScroll={onScroll}
+            className="bg-black/70 border border-gray-800 rounded-lg max-h-72 overflow-y-auto font-mono text-[11px] p-3 leading-relaxed"
+          >
+            {logs.length === 0 ? (
+              <div className="text-gray-600 italic">Sin logs todavía. Ejecutá el scraper para ver actividad aquí.</div>
+            ) : (
+              logs.map(l => {
+                const color =
+                  l.level === 'error' ? 'text-red-400' :
+                  l.level === 'warn' ? 'text-yellow-400' :
+                  l.level === 'success' ? 'text-green-400' : 'text-gray-300'
+                return (
+                  <div key={l.id} className="flex gap-2 whitespace-pre-wrap break-all">
+                    <span className="text-gray-600 shrink-0">{l.ts}</span>
+                    <span className={color}>{l.msg}</span>
+                  </div>
+                )
+              })
+            )}
+          </div>
+          {!autoScroll && (
+            <div className="mt-1.5 text-[10px] text-amber-400">
+              ⏸ Autoscroll pausado (estás mirando logs anteriores). Scrolleá al final para reactivarlo.
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function ScraperCard({ scraper, serverStatus }) {
   const [running, setRunning] = useState(false)
   const [runningExtra, setRunningExtra] = useState(false)
@@ -325,6 +458,9 @@ function ScraperCard({ scraper, serverStatus }) {
           </div>
         </div>
       </div>
+      {/* Panel de logs aislado por scraper — solo muestra los logs de ESTE
+          scraper, sin mezclar con los otros que estén corriendo en paralelo */}
+      <ScraperLogsPanel scraperId={scraper.id} runningHint={running || runningExtra} />
     </div>
   )
 }
