@@ -57,9 +57,15 @@ const SCRAPERS = [
   {
     id: 'fechasApertura',
     name: 'Actualización de Fechas de Apertura',
-    desc: 'Extrae y actualiza fechas de apertura de licitaciones de SICOP comparándolas con la base de datos.',
+    desc: 'Recorre las últimas N páginas de SICOP y actualiza la fecha de apertura/cierre. Si hay cambio en una licitación que está en favoritos de algún usuario, le manda email.',
     icon: Calendar,
-    features: ['Extracción de fechas de apertura', 'Comparación automática con BD', 'Actualización de cambios detectados', 'Ejecución automática a las 2:00 AM'],
+    features: [
+      'Extracción de fechas de apertura',
+      'Comparación automática con BD',
+      'Notifica por email a usuarios con la licitación en favoritos',
+      'Pobla fechaCierre raíz (la usa BidAI para "abierta/vencida")',
+      '🕒 Cron automático: 6:00 AM Costa Rica · 100 páginas'
+    ],
     endpoint: '/api/fechas-apertura/run',
     statusKey: 'fechasApertura',
     color: 'cyan'
@@ -340,7 +346,7 @@ function ScraperCard({ scraper, serverStatus }) {
   const [resultExtra, setResultExtra] = useState(null)
   const [maxPages, setMaxPages] = useState(
     scraper.id === 'faltantes' ? 25 :
-    scraper.id === 'fechasApertura' ? 1300 : // default: cubre las ~1264 páginas reales de SICOP
+    scraper.id === 'fechasApertura' ? 100 : // default diario: últimas 100 páginas (cron 6 AM CR)
     5
   )
   const [horasAtras, setHorasAtras] = useState(8)
@@ -428,9 +434,9 @@ function ScraperCard({ scraper, serverStatus }) {
             {(scraper.id === 'principal' || scraper.id === 'faltantes' || scraper.id === 'fechasApertura') && (() => {
               // Cada scraper tiene un default y un máximo distintos:
               // - principal / faltantes: hasta 100 páginas (suele alcanzar)
-              // - fechasApertura: hasta 1300 (SICOP tiene ~1264 páginas reales)
+              // - fechasApertura: hasta 1300 (full sweep — SICOP tiene ~1264 páginas)
               const maxAllowed = scraper.id === 'fechasApertura' ? 1300 : 100
-              const fallback = scraper.id === 'principal' ? 5 : scraper.id === 'faltantes' ? 25 : 1300
+              const fallback = scraper.id === 'principal' ? 5 : scraper.id === 'faltantes' ? 25 : 100
               return (
                 <div className="flex items-center gap-2 mb-2">
                   <label className="text-xs text-gray-400">Páginas:</label>
@@ -443,7 +449,7 @@ function ScraperCard({ scraper, serverStatus }) {
                     className={`${scraper.id === 'fechasApertura' ? 'w-20' : 'w-16'} bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white text-center`}
                   />
                   {scraper.id === 'fechasApertura' && (
-                    <span className="text-[10px] text-gray-500">(SICOP tiene ~1264)</span>
+                    <span className="text-[10px] text-gray-500">(default diario: 100 · max 1300)</span>
                   )}
                 </div>
               )
