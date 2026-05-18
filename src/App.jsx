@@ -1,6 +1,6 @@
 import React from 'react'
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom'
-import { LayoutDashboard, Users, Bell, BarChart3, FileText, Menu, Layers, Send, LogOut, MailCheck, Server, Eye, Database, Mail, Zap, BookOpen } from 'lucide-react'
+import { LayoutDashboard, Users, Bell, BarChart3, FileText, Menu, Layers, Send, LogOut, MailCheck, Server, Eye, Database, Mail, Zap, BookOpen, Brain } from 'lucide-react'
 import { AuthProvider, useAuth } from './hooks/useAuth'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
@@ -17,6 +17,7 @@ import LicitacionesCR from './pages/LicitacionesCR'
 import EmailMasivo from './pages/EmailMasivo'
 import AutoEnvios from './pages/AutoEnvios'
 import PalabrasAprobadas from './pages/PalabrasAprobadas'
+import AlertasDescripciones from './pages/AlertasDescripciones'
 
 const SUPERADMIN_EMAIL = 'ivankolariki1990@gmail.com'
 
@@ -30,6 +31,7 @@ const navItems = [
   { to: '/alertas-enviadas', icon: MailCheck, label: 'Alertas Enviadas' },
   { to: '/auto-envios', icon: Zap, label: 'Auto-Envíos', superadminOnly: true },
   { to: '/palabras-aprobadas', icon: BookOpen, label: 'Vocabulario Aprobado', superadminOnly: true },
+  { to: '/alertas-descripciones', icon: Brain, label: 'Descripciones de Alertas', superadminOnly: true },
   { to: '/scraper', icon: Server, label: 'Scraper Principal', superadminOnly: true },
   { to: '/preview-alertas', icon: Eye, label: 'Preview Alertas' },
   { to: '/licitaciones-cr', icon: Database, label: 'BD Licitaciones CR' },
@@ -163,6 +165,7 @@ function ProtectedApp() {
             <Route path="/alertas-enviadas" element={<AlertasEnviadas />} />
             <Route path="/auto-envios" element={<SuperadminRoute><AutoEnvios /></SuperadminRoute>} />
             <Route path="/palabras-aprobadas" element={<SuperadminRoute><PalabrasAprobadas /></SuperadminRoute>} />
+            <Route path="/alertas-descripciones" element={<SuperadminRoute><AlertasDescripciones /></SuperadminRoute>} />
             <Route path="/scraper" element={<SuperadminRoute><ScraperPrincipal /></SuperadminRoute>} />
             <Route path="/preview-alertas" element={<PreviewAlertas />} />
             <Route path="/licitaciones-cr" element={<LicitacionesCR />} />
