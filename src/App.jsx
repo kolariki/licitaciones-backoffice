@@ -1,6 +1,6 @@
 import React from 'react'
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom'
-import { LayoutDashboard, Users, Bell, BarChart3, FileText, Menu, Layers, Send, LogOut, MailCheck, Server, Eye, Database, Mail, Zap, BookOpen, Brain, ShieldCheck } from 'lucide-react'
+import { LayoutDashboard, Users, Bell, BarChart3, FileText, Menu, Layers, Send, LogOut, MailCheck, Server, Eye, Database, Mail, Zap, BookOpen, Brain, ShieldCheck, Briefcase } from 'lucide-react'
 import { AuthProvider, useAuth } from './hooks/useAuth'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
@@ -19,6 +19,7 @@ import AutoEnvios from './pages/AutoEnvios'
 import PalabrasAprobadas from './pages/PalabrasAprobadas'
 import AlertasDescripciones from './pages/AlertasDescripciones'
 import AprobadasPendientes from './pages/AprobadasPendientes'
+import AlertasPerfiles from './pages/AlertasPerfiles'
 
 const SUPERADMIN_EMAIL = 'ivankolariki1990@gmail.com'
 
@@ -35,6 +36,7 @@ const navItems = [
   { to: '/alertas-descripciones', icon: Brain, label: 'Descripciones de Alertas', superadminOnly: true },
   { to: '/scraper', icon: Server, label: 'Scraper Principal', superadminOnly: true },
   { to: '/preview-alertas', icon: Eye, label: 'Preview Alertas' },
+  { to: '/alertas-perfiles', icon: Briefcase, label: 'Alertas Perfiles', superadminOnly: true },
   { to: '/licitaciones-cr', icon: Database, label: 'BD Licitaciones CR' },
   { to: '/email-masivo', icon: Mail, label: 'Email Masivo' },
 ]
@@ -170,6 +172,7 @@ function ProtectedApp() {
             <Route path="/aprobadas-pendientes" element={<SuperadminRoute><AprobadasPendientes /></SuperadminRoute>} />
             <Route path="/scraper" element={<SuperadminRoute><ScraperPrincipal /></SuperadminRoute>} />
             <Route path="/preview-alertas" element={<PreviewAlertas />} />
+            <Route path="/alertas-perfiles" element={<SuperadminRoute><AlertasPerfiles /></SuperadminRoute>} />
             <Route path="/licitaciones-cr" element={<LicitacionesCR />} />
             <Route path="/email-masivo" element={<EmailMasivo />} />
           </Routes>
