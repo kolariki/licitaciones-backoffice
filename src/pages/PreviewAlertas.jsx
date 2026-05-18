@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Bell, Send, Loader2, RefreshCw, ExternalLink, Check, AlertTriangle, FileText, DollarSign, Calendar, Building2, Hash, Tag, User, Mail, ChevronDown, ChevronUp, FlaskConical } from 'lucide-react'
+import { Bell, Send, Loader2, RefreshCw, ExternalLink, Check, AlertTriangle, FileText, DollarSign, Calendar, Building2, Hash, Tag, User, Mail, ChevronDown, ChevronUp, FlaskConical, ShieldCheck, ClipboardCheck, X, Brain } from 'lucide-react'
 
 const SCRAPER_URL = 'https://web-production-0dbf.up.railway.app'
 
@@ -17,6 +17,10 @@ export default function PreviewAlertas() {
   const [filtroPerfil, setFiltroPerfil] = useState('todas') // 'todas' | 'con_perfil' | 'sin_perfil'
   const [runningTest, setRunningTest] = useState(false)
   const [testOutput, setTestOutput] = useState(null)
+  // 🛡️ Tabs: 'aprobadas' = pre-aprobadas por agente LLM (esperan OK)
+  //          'manual'    = rechazadas por agente o sin agente (requieren aprobación manual del admin)
+  const [activeTab, setActiveTab] = useState('aprobadas')
+  const [actionLoading, setActionLoading] = useState({})  // {payloadFile|numeroProceso: bool}
 
   const fetchPayloads = async () => {
     setLoading(true)
@@ -160,16 +164,104 @@ export default function PreviewAlertas() {
     return alerta?.perfilNombre || null
   }).filter(Boolean))]
 
-  // Stats (based on filtered)
-  const totalPayloads = filteredPayloads.length
-  const totalLicitaciones = filteredPayloads.reduce((acc, p) => {
-    const lics = parseField(p.licitaciones)
-    return acc + (Array.isArray(lics) ? lics.length : 0)
-  }, 0)
-  const uniqueUsers = [...new Set(filteredPayloads.map(p => {
-    const u = parseField(p.usuario)
+  // 🛡️ Bucket por tab: dividir cada payload en aprobadas-por-agente vs manuales
+  const splitByTab = (lics) => {
+    const arr = Array.isArray(lics) ? lics : []
+    return {
+      aprobadas: arr.filter(l => l.agenteAprobado === true),
+      manual: arr.filter(l => !l.agenteAprobado)
+    }
+  }
+
+  // Conteo global por tab para los badges
+  const allCounts = payloads.reduce((acc, p) => {
+    const { aprobadas, manual } = splitByTab(parseField(p.licitaciones))
+    acc.aprobadas += aprobadas.length
+    acc.manual += manual.length
+    return acc
+  }, { aprobadas: 0, manual: 0 })
+
+  // Filtered + bucket aplicado: solo payloads que tienen licitaciones en el tab activo
+  const payloadsConBucket = filteredPayloads
+    .map(p => {
+      const { aprobadas, manual } = splitByTab(parseField(p.licitaciones))
+      const lics = activeTab === 'aprobadas' ? aprobadas : manual
+      return { payload: p, lics }
+    })
+    .filter(({ lics }) => lics.length > 0)
+
+  const totalPayloads = payloadsConBucket.length
+  const totalLicitaciones = payloadsConBucket.reduce((s, { lics }) => s + lics.length, 0)
+  const uniqueUsers = [...new Set(payloadsConBucket.map(({ payload }) => {
+    const u = parseField(payload.usuario)
     return u?.email || u?._id || ''
   }))].length
+
+  // Acciones para tab "aprobadas" (usa endpoints /api/aprobadas-pendientes/*)
+  const aprobarYEnviar = async (payloadFile, numeroProceso) => {
+    const key = `apr_${payloadFile}_${numeroProceso}`
+    setActionLoading(p => ({ ...p, [key]: true }))
+    try {
+      const r = await fetch(`${SCRAPER_URL}/api/aprobadas-pendientes/confirmar`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: [{ payloadFile, numeroProceso }] })
+      })
+      const d = await r.json()
+      if (!d.success) throw new Error(d.error || '?')
+      setResult({ success: true, message: `Enviada: ${numeroProceso}` })
+      fetchPayloads()
+    } catch (e) { setResult({ success: false, message: e.message }) }
+    setActionLoading(p => ({ ...p, [key]: false }))
+  }
+
+  const rechazarAprobada = async (payloadFile, numeroProceso) => {
+    if (!window.confirm(`Rechazar ${numeroProceso}? Se elimina del payload sin enviar.`)) return
+    const key = `rej_${payloadFile}_${numeroProceso}`
+    setActionLoading(p => ({ ...p, [key]: true }))
+    try {
+      const r = await fetch(`${SCRAPER_URL}/api/aprobadas-pendientes/rechazar`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payloadFile, numeroProceso })
+      })
+      const d = await r.json()
+      if (!d.success) throw new Error(d.error || '?')
+      fetchPayloads()
+    } catch (e) { setResult({ success: false, message: e.message }) }
+    setActionLoading(p => ({ ...p, [key]: false }))
+  }
+
+  const aprobarTodasDelPayload = async (payloadFile, lics) => {
+    if (!window.confirm(`Confirmar y enviar las ${lics.length} licitaciones pre-aprobadas de este payload?`)) return
+    const key = `aprAll_${payloadFile}`
+    setActionLoading(p => ({ ...p, [key]: true }))
+    try {
+      const r = await fetch(`${SCRAPER_URL}/api/aprobadas-pendientes/confirmar`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: lics.map(l => ({ payloadFile, numeroProceso: l.numeroProceso })) })
+      })
+      const d = await r.json()
+      if (!d.success) throw new Error(d.error || '?')
+      setResult({ success: true, message: `Enviadas: ${d.enviados}, fallidas: ${d.fallados}` })
+      fetchPayloads()
+    } catch (e) { setResult({ success: false, message: e.message }) }
+    setActionLoading(p => ({ ...p, [key]: false }))
+  }
+
+  const aprobarTodasGlobal = async () => {
+    if (!window.confirm(`Enviar las ${allCounts.aprobadas} licitaciones pre-aprobadas por el agente? Esto manda emails reales.`)) return
+    setActionLoading(p => ({ ...p, allAprobadas: true }))
+    try {
+      const r = await fetch(`${SCRAPER_URL}/api/aprobadas-pendientes/confirmar`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: 'all' })
+      })
+      const d = await r.json()
+      if (!d.success) throw new Error(d.error || '?')
+      setResult({ success: true, message: `Enviadas: ${d.enviados}, fallidas: ${d.fallados}` })
+      fetchPayloads()
+    } catch (e) { setResult({ success: false, message: e.message }) }
+    setActionLoading(p => ({ ...p, allAprobadas: false }))
+  }
 
   return (
     <div className="space-y-4">
@@ -239,15 +331,74 @@ export default function PreviewAlertas() {
         </div>
       )}
 
-      {/* Stats */}
+      {/* 🛡️ Tabs: Aprobadas Pendientes vs Manuales */}
+      <div className="flex items-center gap-2 border-b border-gray-800">
+        <button
+          onClick={() => setActiveTab('aprobadas')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'aprobadas'
+              ? 'border-violet-500 text-violet-300'
+              : 'border-transparent text-gray-400 hover:text-gray-200'
+          }`}
+        >
+          <ShieldCheck className="w-4 h-4" />
+          Aprobadas pendientes
+          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${activeTab === 'aprobadas' ? 'bg-violet-500/20 text-violet-300' : 'bg-gray-800 text-gray-400'}`}>
+            {allCounts.aprobadas}
+          </span>
+        </button>
+        <button
+          onClick={() => setActiveTab('manual')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'manual'
+              ? 'border-amber-500 text-amber-300'
+              : 'border-transparent text-gray-400 hover:text-gray-200'
+          }`}
+        >
+          <ClipboardCheck className="w-4 h-4" />
+          Requieren aprobación manual
+          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${activeTab === 'manual' ? 'bg-amber-500/20 text-amber-300' : 'bg-gray-800 text-gray-400'}`}>
+            {allCounts.manual}
+          </span>
+        </button>
+      </div>
+
+      {/* Banner explicativo por tab */}
+      {activeTab === 'aprobadas' ? (
+        <div className="bg-violet-500/5 border border-violet-500/20 rounded-lg p-3 text-xs text-violet-200 flex items-start gap-2">
+          <ShieldCheck className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+          <div>
+            <strong>Modo revisión activo.</strong> Estas licitaciones pasaron por el agente LLM y fueron aprobadas, pero el sistema NO las envió automáticamente. Tu confirmás cuáles van. Cuando estés conforme con la calidad, podés desactivar el modo revisión en Railway (<code className="bg-black/30 px-1 rounded">MODO_REVISION_AUTO_ENVIO=false</code>).
+          </div>
+          {allCounts.aprobadas > 0 && (
+            <button
+              onClick={aprobarTodasGlobal}
+              disabled={actionLoading.allAprobadas}
+              className="ml-auto flex items-center gap-1.5 px-3 py-1 rounded text-[11px] font-medium text-white bg-emerald-600 hover:bg-emerald-700 transition-colors disabled:opacity-50 shrink-0"
+            >
+              {actionLoading.allAprobadas ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+              Aprobar y enviar todas ({allCounts.aprobadas})
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-3 text-xs text-amber-200 flex items-start gap-2">
+          <ClipboardCheck className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+          <div>
+            <strong>Aprobación manual necesaria.</strong> Estas licitaciones quedaron acá porque el agente LLM las rechazó, no llegó a evaluarlas (alerta sin descripción), o no entran en el vocabulario aprobado. Revisalas vos y decidí enviarlas o no.
+          </div>
+        </div>
+      )}
+
+      {/* Stats del tab activo */}
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 text-center">
-          <div className="text-2xl font-bold text-amber-400">{totalPayloads}</div>
-          <div className="text-xs text-gray-500 mt-1">Alertas pendientes</div>
+          <div className={`text-2xl font-bold ${activeTab === 'aprobadas' ? 'text-violet-400' : 'text-amber-400'}`}>{totalPayloads}</div>
+          <div className="text-xs text-gray-500 mt-1">Alertas con {activeTab === 'aprobadas' ? 'aprobadas' : 'manuales'}</div>
         </div>
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 text-center">
           <div className="text-2xl font-bold text-blue-400">{totalLicitaciones}</div>
-          <div className="text-xs text-gray-500 mt-1">Licitaciones</div>
+          <div className="text-xs text-gray-500 mt-1">Licitaciones en el tab</div>
         </div>
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 text-center">
           <div className="text-2xl font-bold text-green-400">{uniqueUsers}</div>
@@ -307,21 +458,27 @@ export default function PreviewAlertas() {
       )}
 
       {/* Empty filtered */}
-      {!loading && payloads.length > 0 && filteredPayloads.length === 0 && (
+      {!loading && payloads.length > 0 && payloadsConBucket.length === 0 && (
         <div className="text-center py-8 text-gray-500">
-          <p className="text-sm">No hay alertas que coincidan con el filtro seleccionado</p>
-          <button onClick={() => setFiltroPerfil('todas')} className="text-xs text-amber-400 hover:text-amber-300 mt-1">Ver todas</button>
+          <p className="text-sm">
+            {activeTab === 'aprobadas'
+              ? 'No hay licitaciones pre-aprobadas por el agente. Cuando corra la próxima cadena, las aprobadas aparecen acá.'
+              : 'No hay licitaciones esperando aprobación manual.'}
+          </p>
+          {filtroPerfil !== 'todas' && (
+            <button onClick={() => setFiltroPerfil('todas')} className="text-xs text-amber-400 hover:text-amber-300 mt-1">Quitar filtro de perfil</button>
+          )}
         </div>
       )}
 
       {/* Payload cards */}
-      {!loading && filteredPayloads.map((payload, idx) => {
+      {!loading && payloadsConBucket.map(({ payload, lics: licitaciones }, idx) => {
         const usuario = parseField(payload.usuario)
         const alerta = parseField(payload.alerta)
-        const licitaciones = parseField(payload.licitaciones) || []
         const meta = parseField(payload.metadatos)
         const expanded = expandedPayloads[idx] !== false // default open
         const completeKey = `complete_${payload.alertaId}_${payload.usuarioId}`
+        const aprAllKey = `aprAll_${payload._filename}`
 
         return (
           <div key={idx} className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
@@ -353,7 +510,16 @@ export default function PreviewAlertas() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {sentAlerts[completeKey] ? (
+                  {activeTab === 'aprobadas' ? (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); aprobarTodasDelPayload(payload._filename, licitaciones) }}
+                      disabled={actionLoading[aprAllKey]}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                    >
+                      {actionLoading[aprAllKey] ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                      Aprobar y enviar todas ({licitaciones.length})
+                    </button>
+                  ) : sentAlerts[completeKey] ? (
                     <span className="flex items-center gap-1 text-xs text-green-400"><Check className="w-3.5 h-3.5" /> Enviada</span>
                   ) : (
                     <button
@@ -418,10 +584,44 @@ export default function PreviewAlertas() {
                           {lic.objeto && lic.objeto !== lic.titulo && (
                             <p className="text-xs text-gray-500 mt-1.5 line-clamp-2">{lic.objeto}</p>
                           )}
+
+                          {/* 🧠 Decisión del agente LLM (si la hay) */}
+                          {lic.agenteDecision && (
+                            <div className={`mt-2 text-[11px] rounded p-2 flex items-start gap-1.5 ${
+                              lic.agenteDecision.decision === 'enviar'
+                                ? 'bg-violet-500/5 border border-violet-500/20 text-violet-200'
+                                : 'bg-red-500/5 border border-red-500/20 text-red-200'
+                            }`}>
+                              <Brain className="w-3 h-3 mt-0.5 shrink-0" />
+                              <div className="flex-1">
+                                <strong>Agente {lic.agenteDecision.decision} ({lic.agenteDecision.confianza}%):</strong>{' '}
+                                {lic.agenteDecision.razon}
+                              </div>
+                            </div>
+                          )}
                         </div>
 
-                        <div className="shrink-0">
-                          {sentAlerts[indKey] ? (
+                        <div className="shrink-0 flex flex-col gap-1.5 items-end">
+                          {activeTab === 'aprobadas' ? (
+                            <>
+                              <button
+                                onClick={() => aprobarYEnviar(payload._filename, lic.numeroProceso)}
+                                disabled={actionLoading[`apr_${payload._filename}_${lic.numeroProceso}`]}
+                                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-white bg-emerald-600 hover:bg-emerald-700 transition-colors disabled:opacity-50 w-full"
+                              >
+                                {actionLoading[`apr_${payload._filename}_${lic.numeroProceso}`] ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                                Enviar
+                              </button>
+                              <button
+                                onClick={() => rechazarAprobada(payload._filename, lic.numeroProceso)}
+                                disabled={actionLoading[`rej_${payload._filename}_${lic.numeroProceso}`]}
+                                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-colors disabled:opacity-50 w-full"
+                              >
+                                {actionLoading[`rej_${payload._filename}_${lic.numeroProceso}`] ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
+                                Rechazar
+                              </button>
+                            </>
+                          ) : sentAlerts[indKey] ? (
                             <span className="flex items-center gap-1 text-xs text-green-400"><Check className="w-3.5 h-3.5" /></span>
                           ) : (
                             <button

@@ -33,7 +33,6 @@ const navItems = [
   { to: '/auto-envios', icon: Zap, label: 'Auto-Envíos', superadminOnly: true },
   { to: '/palabras-aprobadas', icon: BookOpen, label: 'Vocabulario Aprobado', superadminOnly: true },
   { to: '/alertas-descripciones', icon: Brain, label: 'Descripciones de Alertas', superadminOnly: true },
-  { to: '/aprobadas-pendientes', icon: ShieldCheck, label: 'Aprobadas Pendientes', superadminOnly: true },
   { to: '/scraper', icon: Server, label: 'Scraper Principal', superadminOnly: true },
   { to: '/preview-alertas', icon: Eye, label: 'Preview Alertas' },
   { to: '/licitaciones-cr', icon: Database, label: 'BD Licitaciones CR' },
