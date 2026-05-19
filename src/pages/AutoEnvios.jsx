@@ -27,6 +27,16 @@ export default function AutoEnvios() {
       if (soloIncompletos) params.set('soloIncompletos', 'true')
 
       const r = await fetch(`${SCRAPER_URL}/api/auto-envios?${params.toString()}`)
+      if (!r.ok) {
+        if (r.status === 404) {
+          throw new Error('El endpoint /api/auto-envios todavía no está en el server. Redeploy pendiente en Railway (commit 63d689b o más nuevo).')
+        }
+        throw new Error(`HTTP ${r.status} ${r.statusText}`)
+      }
+      const ct = r.headers.get('content-type') || ''
+      if (!ct.includes('application/json')) {
+        throw new Error('El server devolvió HTML en vez de JSON — endpoint no disponible o redirección. Revisá el redeploy del backend.')
+      }
       const d = await r.json()
       if (!d.success) throw new Error(d.error || 'Error desconocido')
       setData(d)
