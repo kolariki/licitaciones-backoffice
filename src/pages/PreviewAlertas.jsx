@@ -71,21 +71,61 @@ export default function PreviewAlertas() {
   const ejecutarTest = async () => {
     setRunningTest(true)
     setResult(null)
-    setTestOutput(null)
+    setTestOutput('▶ Iniciando verificación de perfiles…\n')
     try {
+      // 1. Disparar (devuelve jobId inmediato)
       const r = await fetch(`${SCRAPER_URL}/api/alertas/test`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ horasAtras })
       })
       const d = await r.json()
-      setResult({ success: d.success, message: d.message || 'Test completado' })
-      setTestOutput(d.output || null)
-      setTimeout(() => fetchPayloads(), 1000)
+      if (!d.success || !d.jobId) {
+        setResult({ success: false, message: d.error || 'No se pudo iniciar' })
+        setRunningTest(false)
+        return
+      }
+      setResult({ success: true, message: `Iniciado (jobId ${d.jobId.slice(-6)}) — esperando…` })
+
+      // 2. Polling cada 5s hasta done/error
+      const start = Date.now()
+      const maxWaitMs = 10 * 60 * 1000 // 10 min max
+      const poll = async () => {
+        if (Date.now() - start > maxWaitMs) {
+          setResult({ success: false, message: 'Timeout — el job sigue corriendo en el server' })
+          setRunningTest(false)
+          return
+        }
+        try {
+          const sr = await fetch(`${SCRAPER_URL}/api/alertas/test/status?jobId=${d.jobId}`)
+          const sd = await sr.json()
+          if (!sd.success) {
+            setResult({ success: false, message: 'No se pudo consultar estado' })
+            setRunningTest(false)
+            return
+          }
+          setTestOutput(sd.output || '(sin output todavía)')
+          if (sd.status === 'done' || sd.status === 'error') {
+            setResult({
+              success: sd.status === 'done',
+              message: `${sd.status === 'done' ? '✅' : '❌'} Verificación de perfiles terminada en ${sd.durationSeconds}s`
+            })
+            setTimeout(() => fetchPayloads(), 500)
+            setRunningTest(false)
+            return
+          }
+          setResult({ success: true, message: `⏳ Corriendo… ${sd.durationSeconds}s` })
+          setTimeout(poll, 5000)
+        } catch (e) {
+          setResult({ success: false, message: 'Error polling: ' + e.message })
+          setRunningTest(false)
+        }
+      }
+      setTimeout(poll, 3000)
     } catch (e) {
       setResult({ success: false, message: e.message })
+      setRunningTest(false)
     }
-    setRunningTest(false)
   }
 
   const enviarIndividual = async (alertaId, usuarioId, numeroProceso, licitacionId, payloadFilename) => {
