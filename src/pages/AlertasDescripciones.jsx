@@ -12,12 +12,15 @@ export default function AlertasDescripciones() {
   const [regenerating, setRegenerating] = useState(false)
   const [output, setOutput] = useState('')
   const [editing, setEditing] = useState(null)
+  const [filtroPerfil, setFiltroPerfil] = useState('todas') // 'todas' | 'con_perfil' | 'sin_perfil'
 
   const fetch_ = useCallback(async () => {
     setLoading(true); setError(null)
     try {
       const params = new URLSearchParams({ limit: '500' })
       if (email.trim()) params.set('email', email.trim())
+      if (filtroPerfil === 'con_perfil') params.set('soloConPerfil', 'true')
+      else if (filtroPerfil === 'sin_perfil') params.set('soloSinPerfil', 'true')
       const r = await fetch(`${SCRAPER_URL}/api/alertas-descripciones?${params}`)
       if (!r.ok) {
         if (r.status === 404) throw new Error('Endpoint no disponible — redeploy del back pendiente')
@@ -33,6 +36,9 @@ export default function AlertasDescripciones() {
   }, [email])
 
   useEffect(() => { fetch_() }, [fetch_])
+
+  // re-fetch al cambiar filtro de perfil
+  useEffect(() => { fetch_() }, [filtroPerfil]) // eslint-disable-line
 
   const regenerarTodas = async () => {
     if (!window.confirm(`Regenerar descripciones LLM ${email ? 'solo para ' + email : 'para TODAS las alertas elegibles'}. Costo aprox: <$0.50. ¿Continuar?`)) return
@@ -109,12 +115,32 @@ export default function AlertasDescripciones() {
         </div>
       </div>
 
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-        <label className="text-[11px] text-gray-500 uppercase">Filtrar por email</label>
-        <div className="relative">
-          <Search className="absolute left-2 top-2 w-3.5 h-3.5 text-gray-500" />
-          <input type="text" value={email} onChange={e => setEmail(e.target.value)} placeholder="vacío = todos"
-            className="w-full md:w-96 bg-gray-800 border border-gray-700 rounded pl-7 pr-2 py-1.5 text-sm text-white placeholder-gray-600" />
+      <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 space-y-3">
+        <div>
+          <label className="text-[11px] text-gray-500 uppercase">Filtrar por email</label>
+          <div className="relative">
+            <Search className="absolute left-2 top-2 w-3.5 h-3.5 text-gray-500" />
+            <input type="text" value={email} onChange={e => setEmail(e.target.value)} placeholder="vacío = todos"
+              className="w-full md:w-96 bg-gray-800 border border-gray-700 rounded pl-7 pr-2 py-1.5 text-sm text-white placeholder-gray-600" />
+          </div>
+        </div>
+        <div>
+          <label className="text-[11px] text-gray-500 uppercase block mb-1">Filtrar por perfil</label>
+          <div className="flex gap-1.5 flex-wrap">
+            {[
+              { k: 'todas', label: 'Todas' },
+              { k: 'con_perfil', label: '📁 Con perfil' },
+              { k: 'sin_perfil', label: 'Sin perfil' }
+            ].map(f => (
+              <button key={f.k} onClick={() => setFiltroPerfil(f.k)}
+                className={`text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${
+                  filtroPerfil === f.k ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+                    : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'
+                }`}>
+                {f.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -145,11 +171,21 @@ export default function AlertasDescripciones() {
                 <div key={d._id} className="p-4">
                   <div className="flex items-start gap-3">
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                      <h3 className="text-sm font-semibold text-white flex items-center gap-2 flex-wrap">
                         🎯 {d.alertaNombre || '(sin nombre)'}
+                        {d._perfilNombre && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold border border-gray-300" style={{ backgroundColor: '#ffffff', color: d._perfilColor || '#1a3a5c' }}>
+                            {d._perfilIcono || '📁'} PERFIL: {d._perfilNombre.toUpperCase()}
+                          </span>
+                        )}
                         {d.descripcionManual && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">Manual</span>}
                         <span className="text-[10px] text-gray-500">• {d.ejemplosUsados} ejemplos</span>
                         <span className="text-[10px] text-gray-500">• {d.modeloUsado}</span>
+                        {(d._kwCount > 0 || d._codCount > 0) && (
+                          <span className="text-[10px] text-gray-500">
+                            • {d._kwCount > 0 && `${d._kwCount}kw`}{d._kwCount > 0 && d._codCount > 0 && ' / '}{d._codCount > 0 && `${d._codCount}cod`}
+                          </span>
+                        )}
                       </h3>
 
                       {isEditing ? (
