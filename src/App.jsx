@@ -1,6 +1,6 @@
 import React from 'react'
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom'
-import { LayoutDashboard, Users, Bell, BarChart3, FileText, Menu, Layers, Send, LogOut, MailCheck, Server, Eye, Database, Mail, Zap, BookOpen, Brain, ShieldCheck, Briefcase } from 'lucide-react'
+import { LayoutDashboard, Users, Bell, BarChart3, FileText, Menu, Layers, Send, LogOut, MailCheck, Server, Eye, Database, Mail, Zap, BookOpen, Brain, ShieldCheck, Briefcase, MessageSquare } from 'lucide-react'
 import { AuthProvider, useAuth } from './hooks/useAuth'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
@@ -20,6 +20,7 @@ import PalabrasAprobadas from './pages/PalabrasAprobadas'
 import AlertasDescripciones from './pages/AlertasDescripciones'
 import AprobadasPendientes from './pages/AprobadasPendientes'
 import AlertasPerfiles from './pages/AlertasPerfiles'
+import ConsultasExpertos from './pages/ConsultasExpertos'
 
 const SUPERADMIN_EMAIL = 'ivankolariki1990@gmail.com'
 
@@ -30,6 +31,7 @@ const navItems = [
   { to: '/analytics', icon: BarChart3, label: 'Analíticas' },
   { to: '/licitaciones', icon: FileText, label: 'Licitaciones' },
   { to: '/recomendaciones', icon: Send, label: 'Recomendaciones' },
+  { to: '/consultas', icon: MessageSquare, label: 'Consultas Expertos' },
   { to: '/alertas-enviadas', icon: MailCheck, label: 'Alertas Enviadas' },
   { to: '/auto-envios', icon: Zap, label: 'Auto-Envíos', superadminOnly: true },
   { to: '/palabras-aprobadas', icon: BookOpen, label: 'Vocabulario Aprobado', superadminOnly: true },
@@ -165,6 +167,7 @@ function ProtectedApp() {
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/licitaciones" element={<Licitaciones />} />
             <Route path="/recomendaciones" element={<Recomendaciones />} />
+            <Route path="/consultas" element={<ConsultasExpertos />} />
             <Route path="/alertas-enviadas" element={<AlertasEnviadas />} />
             <Route path="/auto-envios" element={<SuperadminRoute><AutoEnvios /></SuperadminRoute>} />
             <Route path="/palabras-aprobadas" element={<SuperadminRoute><PalabrasAprobadas /></SuperadminRoute>} />
