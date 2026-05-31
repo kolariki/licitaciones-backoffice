@@ -49,6 +49,33 @@ export default function ConsultasExpertos() {
     cargar()
   }, [cargar])
 
+  // Refresco silencioso (polling) para ver consultas/respuestas nuevas sin recargar.
+  const seleccionadaRef = useRef(null)
+  useEffect(() => {
+    seleccionadaRef.current = seleccionada?._id || null
+  }, [seleccionada])
+
+  useEffect(() => {
+    const id = setInterval(async () => {
+      try {
+        const url = `${API_URL}/api/backoffice/consultas${filtro !== 'all' ? `?estado=${filtro}` : ''}`
+        const r = await fetch(url, { headers: { 'x-auth-token': token } })
+        const d = await r.json()
+        setConsultas(d.consultas || [])
+        // Refrescar también el hilo abierto (follow-ups del usuario en tiempo real).
+        const abiertoId = seleccionadaRef.current
+        if (abiertoId) {
+          const lista = d.consultas || []
+          const fresca = lista.find(x => x._id === abiertoId)
+          if (fresca) setSeleccionada(prev => (prev && prev._id === abiertoId ? { ...prev, ...fresca } : prev))
+        }
+      } catch {
+        /* silencioso: reintenta en el próximo tick */
+      }
+    }, 15000)
+    return () => clearInterval(id)
+  }, [filtro, token])
+
   useEffect(() => {
     if (hiloRef.current) hiloRef.current.scrollTop = hiloRef.current.scrollHeight
   }, [seleccionada])
