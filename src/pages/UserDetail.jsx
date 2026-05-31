@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Mail, MapPin, Crown, Bell, Calendar, Edit, Save, X, Trash2, Clock, Plus, Search, Tag, ToggleLeft, ToggleRight, AlertTriangle, CheckCircle, XCircle, Copy, Check, Info } from 'lucide-react'
+import { ArrowLeft, Mail, MapPin, Crown, Bell, Calendar, Edit, Save, X, Trash2, Clock, Plus, Search, Tag, ToggleLeft, ToggleRight, AlertTriangle, CheckCircle, XCircle, Copy, Check, Info, Users as UsersIcon } from 'lucide-react'
 import { API_URL } from '../config'
 
 // Toast component
@@ -77,7 +77,13 @@ export default function UserDetail() {
       const u = (usersData.users || []).find(u => u._id === userId)
       setUser(u || null)
       setAlerts(alertsData.alertas || [])
-      if (u) setEditForm({ nombre: u.nombre, email: u.email, pais: u.pais, suscripcion: u.nivelSuscripcion || u.rol })
+      if (u) setEditForm({
+        nombre: u.nombre,
+        email: u.email,
+        pais: u.pais,
+        suscripcion: u.nivelSuscripcion || u.rol,
+        maxPerfiles: u.maxPerfiles ?? '',
+      })
       setLoading(false)
     }).catch(() => setLoading(false))
   }, [userId])
@@ -85,14 +91,21 @@ export default function UserDetail() {
   const handleSave = async () => {
     setSaving(true)
     try {
+      // Sanitizar maxPerfiles: vacío → null (vuelve al default), si tiene valor lo casteamos a int
+      const payload = {
+        ...editForm,
+        maxPerfiles: editForm.maxPerfiles === '' || editForm.maxPerfiles == null
+          ? null
+          : Math.max(0, parseInt(editForm.maxPerfiles, 10) || 0),
+      }
       const res = await fetch(`${API_URL}/api/dashboard/usuarios/${userId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editForm)
+        body: JSON.stringify(payload)
       })
       const d = await res.json()
       if (d.success) {
-        setUser({ ...user, ...editForm, rol: editForm.suscripcion, nivelSuscripcion: editForm.suscripcion })
+        setUser({ ...user, ...payload, rol: payload.suscripcion, nivelSuscripcion: payload.suscripcion })
         setEditing(false)
         addToast('success', 'Usuario actualizado')
       } else {
@@ -554,11 +567,50 @@ export default function UserDetail() {
                 content: editing ? (
                   <select value={editForm.suscripcion} onChange={e => setEditForm({...editForm, suscripcion: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-sm text-white focus:border-blue-500/50 focus:outline-none transition-colors">
                     <option value="free">Free</option>
+                    <option value="basic">Basic</option>
+                    <option value="medium">Medium</option>
                     <option value="premium">Premium</option>
                     <option value="max">Max</option>
                   </select>
                 ) : (
-                  <p className={`text-sm font-medium ${user.rol === 'max' ? 'text-amber-400' : isPremium ? 'text-purple-400' : ''}`}>{user.rol === 'max' ? '👑 Max' : isPremium ? '★ Premium' : 'Free'}</p>
+                  <p className={`text-sm font-medium ${
+                    user.rol === 'max' ? 'text-amber-400'
+                    : user.rol === 'premium' ? 'text-purple-400'
+                    : user.rol === 'medium' ? 'text-blue-400'
+                    : user.rol === 'basic' ? 'text-emerald-400'
+                    : ''
+                  }`}>{
+                    user.rol === 'max' ? '👑 Max'
+                    : user.rol === 'premium' ? '★ Premium'
+                    : user.rol === 'medium' ? '◆ Medium'
+                    : user.rol === 'basic' ? '● Basic'
+                    : 'Free'
+                  }</p>
+                )
+              },
+              {
+                icon: UsersIcon, label: 'Perfiles permitidos',
+                content: editing ? (
+                  <input
+                    type="number"
+                    min="0"
+                    max="50"
+                    value={editForm.maxPerfiles ?? ''}
+                    onChange={e => setEditForm({...editForm, maxPerfiles: e.target.value})}
+                    placeholder="Default (5)"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-sm text-white focus:border-blue-500/50 focus:outline-none transition-colors placeholder-gray-600"
+                  />
+                ) : (
+                  <p className="text-sm font-medium flex items-center gap-1.5">
+                    {user.maxPerfiles != null ? (
+                      <span className="text-blue-400">{user.maxPerfiles}</span>
+                    ) : (
+                      <span className="text-gray-500">5 (default)</span>
+                    )}
+                    {(user.rol === 'max' || user.rol === 'elevum') && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 font-bold uppercase tracking-wider">Max</span>
+                    )}
+                  </p>
                 )
               },
               { icon: Bell, label: 'Alertas', content: <p className="text-sm font-medium">{alerts.length} configuradas</p> },

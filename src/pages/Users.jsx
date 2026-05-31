@@ -32,9 +32,11 @@ export default function UsersPage() {
         if (!u.nombre?.toLowerCase().includes(s) && !u.email?.toLowerCase().includes(s) && !(u.cedulaEmpresa || u.entidad || '').toLowerCase().includes(s)) return false
       }
       if (filterPlan !== 'all') {
-        const isPremium = u.nivelSuscripcion === 'premium' || u.rol === 'premium'
-        if (filterPlan === 'premium' && !isPremium) return false
-        if (filterPlan === 'free' && isPremium) return false
+        // Match exacto contra rol o nivelSuscripcion (cualquiera de los dos cuenta)
+        const rol = (u.rol || '').toLowerCase();
+        const nivel = (u.nivelSuscripcion || '').toLowerCase();
+        const matchea = rol === filterPlan || nivel === filterPlan;
+        if (!matchea) return false;
       }
       if (filterCountry !== 'all' && u.pais !== filterCountry) return false
       return true
@@ -88,8 +90,11 @@ export default function UsersPage() {
         </div>
         <select value={filterPlan} onChange={e => setFilterPlan(e.target.value)} className="px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-sm text-gray-300 focus:border-blue-500 focus:outline-none">
           <option value="all">Todos los planes</option>
-          <option value="premium">Premium</option>
           <option value="free">Free</option>
+          <option value="basic">Basic</option>
+          <option value="medium">Medium</option>
+          <option value="premium">Premium</option>
+          <option value="max">Max</option>
         </select>
         <select value={filterCountry} onChange={e => setFilterCountry(e.target.value)} className="px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-sm text-gray-300 focus:border-blue-500 focus:outline-none">
           <option value="all">Todos los países</option>
@@ -118,12 +123,26 @@ export default function UsersPage() {
             </thead>
             <tbody className="divide-y divide-gray-800">
               {filtered.map(u => {
-                const isPremium = u.nivelSuscripcion === 'premium' || u.rol === 'premium'
+                // Resolver el plan real del user (rol gana sobre nivelSuscripcion)
+                const rolReal = (u.rol || u.nivelSuscripcion || 'free').toLowerCase();
+                const planInfo = (() => {
+                  switch (rolReal) {
+                    case 'max':       return { label: '👑 Max',     badge: 'bg-amber-500/20 text-amber-400',    avatar: 'bg-amber-600/30 text-amber-300' };
+                    case 'elevum':    return { label: '👑 Max',     badge: 'bg-amber-500/20 text-amber-400',    avatar: 'bg-amber-600/30 text-amber-300' };
+                    case 'admin':     return { label: '🛠 Admin',   badge: 'bg-rose-500/20 text-rose-400',      avatar: 'bg-rose-600/30 text-rose-300' };
+                    case 'desarrollador': return { label: '🛠 Dev', badge: 'bg-rose-500/20 text-rose-400',      avatar: 'bg-rose-600/30 text-rose-300' };
+                    case 'premium':   return { label: '★ Premium', badge: 'bg-purple-500/20 text-purple-400',  avatar: 'bg-purple-600/30 text-purple-300' };
+                    case 'medium':    return { label: '◆ Medium',  badge: 'bg-blue-500/20 text-blue-400',      avatar: 'bg-blue-600/30 text-blue-300' };
+                    case 'basic':     return { label: '● Basic',   badge: 'bg-emerald-500/20 text-emerald-400', avatar: 'bg-emerald-600/30 text-emerald-300' };
+                    default:          return { label: 'Free',      badge: 'bg-gray-700 text-gray-400',         avatar: 'bg-gray-700 text-gray-300' };
+                  }
+                })();
+
                 return (
                   <tr key={u._id} className="hover:bg-gray-800/50 transition-colors">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
-                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold ${isPremium ? 'bg-purple-600/30 text-purple-300' : 'bg-gray-700 text-gray-300'}`}>
+                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold ${planInfo.avatar}`}>
                           {u.nombre?.charAt(0)?.toUpperCase() || '?'}
                         </div>
                         <div>
@@ -142,8 +161,8 @@ export default function UsersPage() {
                       </span>
                     </td>
                     <td className="px-5 py-3">
-                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${isPremium ? 'bg-purple-500/20 text-purple-400' : 'bg-gray-700 text-gray-400'}`}>
-                        {isPremium ? '★ Premium' : 'Free'}
+                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${planInfo.badge}`}>
+                        {planInfo.label}
                       </span>
                     </td>
                     <td className="px-5 py-3">

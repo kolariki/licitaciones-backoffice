@@ -20,11 +20,18 @@ export default function Stats() {
   if (loading) return <Spinner size="lg" />;
 
   const total = users.length;
-  const premium = users.filter(u => u.rol === 'premium').length;
-  const free = total - premium;
+  // Conteos por plan: free / basic / medium / premium / max
+  const ROLES_PAGOS = ['basic', 'medium', 'premium', 'max', 'elevum', 'admin', 'desarrollador'];
+  const basic   = users.filter(u => (u.rol || '').toLowerCase() === 'basic').length;
+  const medium  = users.filter(u => (u.rol || '').toLowerCase() === 'medium').length;
+  const premium = users.filter(u => (u.rol || '').toLowerCase() === 'premium').length;
+  const max     = users.filter(u => ['max', 'elevum'].includes((u.rol || '').toLowerCase())).length;
+  const pagos   = users.filter(u => ROLES_PAGOS.includes((u.rol || '').toLowerCase())).length;
+  const free    = total - pagos;
   const activos = users.filter(u => u.activo !== false).length;
   const inactivos = total - activos;
-  const conversionRate = total > 0 ? ((premium / total) * 100).toFixed(1) : 0;
+  // Conversion rate = users con cualquier plan pago / total
+  const conversionRate = total > 0 ? ((pagos / total) * 100).toFixed(1) : 0;
 
   // Country data
   const countryMap = {};

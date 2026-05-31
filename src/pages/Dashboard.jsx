@@ -210,7 +210,24 @@ export default function Dashboard() {
   const stats = data?.stats || {}
   const users = data?.users || []
   const recentUsers = [...users].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 8)
-  const premiumUsers = users.filter(u => u.nivelSuscripcion === 'premium' || u.rol === 'premium')
+  // Helper para color/label del badge de plan
+  const getPlanBadge = (u) => {
+    const rol = ((u.rol || u.nivelSuscripcion || 'free') + '').toLowerCase();
+    switch (rol) {
+      case 'max':
+      case 'elevum':       return { label: '👑 Max',     cls: 'bg-amber-500/20 text-amber-400' };
+      case 'admin':
+      case 'desarrollador':return { label: '🛠 Staff',   cls: 'bg-rose-500/20 text-rose-400' };
+      case 'premium':      return { label: '★ Premium', cls: 'bg-purple-500/20 text-purple-400' };
+      case 'medium':       return { label: '◆ Medium',  cls: 'bg-blue-500/20 text-blue-400' };
+      case 'basic':        return { label: '● Basic',   cls: 'bg-emerald-500/20 text-emerald-400' };
+      default:             return { label: 'Free',      cls: 'bg-gray-700 text-gray-400' };
+    }
+  };
+
+  // Cualquier user con plan pago (medium / premium / max / staff)
+  const ROLES_PAGOS = new Set(['basic', 'medium', 'premium', 'max', 'elevum', 'admin', 'desarrollador']);
+  const premiumUsers = users.filter(u => ROLES_PAGOS.has(((u.rol || u.nivelSuscripcion || '') + '').toLowerCase()))
 
   return (
     <div className="space-y-6">
@@ -244,9 +261,10 @@ export default function Dashboard() {
                   <p className="text-xs text-gray-500 truncate">{u.email}</p>
                 </div>
                 <div className="text-right">
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${u.nivelSuscripcion === 'premium' || u.rol === 'premium' ? 'bg-purple-500/20 text-purple-400' : 'bg-gray-700 text-gray-400'}`}>
-                    {u.nivelSuscripcion || u.rol || 'free'}
-                  </span>
+                  {(() => {
+                    const b = getPlanBadge(u);
+                    return <span className={`text-xs px-2 py-0.5 rounded-full ${b.cls}`}>{b.label}</span>;
+                  })()}
                   <p className="text-xs text-gray-500 mt-1">{new Date(u.createdAt).toLocaleDateString('es')}</p>
                 </div>
               </Link>
