@@ -28,6 +28,7 @@ export default function PagosRechazados() {
   const [resultados, setResultados] = useState({}) // _id → 'enviado' | 'fallido' | 'salteado_ya_enviado'
   const [verPreview, setVerPreview] = useState(false)
   const [soloSinEmail, setSoloSinEmail] = useState(true)
+  const [errorAuth, setErrorAuth] = useState(false)
 
   const headers = { 'x-auth-token': token, 'Content-Type': 'application/json' }
 
@@ -35,6 +36,12 @@ export default function PagosRechazados() {
     setLoading(true)
     try {
       const r = await fetch(`${API_URL}/api/backoffice/pagos-rechazados`, { headers: { 'x-auth-token': token } })
+      if (r.status === 401 || r.status === 403) {
+        setErrorAuth(true)
+        setUsuarios([])
+        return
+      }
+      setErrorAuth(false)
       const d = await r.json()
       setUsuarios(d.usuarios || [])
     } catch (e) {
@@ -160,6 +167,13 @@ export default function PagosRechazados() {
           </button>
         </div>
       </div>
+
+      {errorAuth && (
+        <div className="mb-4 bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-sm text-red-400">
+          <strong>Tu sesión expiró o el token no es válido.</strong> Cerrá sesión y volvé a
+          iniciar sesión en el backoffice para poder ver la lista y enviar emails.
+        </div>
+      )}
 
       {verPreview && (
         <div className="mb-6 bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
