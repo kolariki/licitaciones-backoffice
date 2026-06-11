@@ -95,6 +95,41 @@ export default function PagosRechazados() {
   const idsVisibles = visibles.map(u => u._id)
   const todosSeleccionados = idsVisibles.length > 0 && idsVisibles.every(id => seleccion.has(id))
 
+  // Envío manual a un email cargado a mano
+  const [emailManual, setEmailManual] = useState('')
+  const [enviandoManual, setEnviandoManual] = useState(false)
+  const [resultadoManual, setResultadoManual] = useState(null) // {ok, msj}
+
+  const enviarManual = async () => {
+    const email = emailManual.trim().toLowerCase()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setResultadoManual({ ok: false, msj: 'Email inválido' })
+      return
+    }
+    if (!window.confirm(`¿Enviar el email de "pago rechazado / recuperá tu plan" a ${email}?`)) return
+    setEnviandoManual(true)
+    setResultadoManual(null)
+    try {
+      const r = await fetch(`${API_URL}/api/backoffice/pagos-rechazados/enviar-manual`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ email }),
+      })
+      const d = await r.json()
+      if (d.success) {
+        setResultadoManual({ ok: true, msj: `Enviado a ${d.email} (plan ${d.plan}${d.usuarioRegistrado ? ', usuario registrado' : ', no es usuario registrado'})` })
+        setEmailManual('')
+        cargar()
+      } else {
+        setResultadoManual({ ok: false, msj: d.message || 'Error enviando' })
+      }
+    } catch (e) {
+      setResultadoManual({ ok: false, msj: 'Error de conexión' })
+    } finally {
+      setEnviandoManual(false)
+    }
+  }
+
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
@@ -134,6 +169,37 @@ export default function PagosRechazados() {
           <PreviewEmail token={token} />
         </div>
       )}
+
+      <div className="mb-4 bg-gray-900 border border-gray-800 rounded-xl p-4">
+        <div className="text-sm font-semibold text-white mb-2">Enviar a un email específico</div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <input
+            type="email"
+            value={emailManual}
+            onChange={(e) => { setEmailManual(e.target.value); setResultadoManual(null) }}
+            onKeyDown={(e) => e.key === 'Enter' && !enviandoManual && enviarManual()}
+            placeholder="usuario@empresa.com"
+            className="flex-1 min-w-[260px] bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+          />
+          <button
+            onClick={enviarManual}
+            disabled={enviandoManual || !emailManual.trim()}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {enviandoManual ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            Enviar email
+          </button>
+        </div>
+        {resultadoManual && (
+          <div className={`mt-2 text-xs flex items-center gap-1 ${resultadoManual.ok ? 'text-emerald-400' : 'text-red-400'}`}>
+            {resultadoManual.ok ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
+            {resultadoManual.msj}
+          </div>
+        )}
+        <p className="text-xs text-gray-500 mt-2">
+          Si el email pertenece a un usuario registrado, el mensaje se personaliza con su nombre y su plan anterior, y queda registrado en su ficha.
+        </p>
+      </div>
 
       <div className="flex items-center justify-between mb-4">
         <label className="flex items-center gap-2 text-sm text-gray-400 cursor-pointer">
