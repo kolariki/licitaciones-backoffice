@@ -1,6 +1,9 @@
 import { useState, useEffect, createContext, useContext } from 'react'
 import { API_URL } from '../config'
 
+// Mismos roles que acepta el backend (middleware/backofficeAuth.js)
+const BACKOFFICE_ROLES = ['elevum', 'max', 'desarrollador', 'admin', 'Desarrollador']
+
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
@@ -15,7 +18,7 @@ export function AuthProvider({ children }) {
       if (cachedUser) {
         try {
           const u = JSON.parse(cachedUser)
-          if (u.rol === 'elevum') {
+          if (BACKOFFICE_ROLES.includes(u.rol)) {
             setUser(u)
             setLoading(false)
             return
@@ -30,7 +33,7 @@ export function AuthProvider({ children }) {
         .then(r => r.ok ? r.json() : Promise.reject())
         .then(d => {
           const u = d.usuario || d
-          if (u.rol === 'elevum') {
+          if (BACKOFFICE_ROLES.includes(u.rol)) {
             setUser(u)
             localStorage.setItem('bo_user', JSON.stringify(u))
           } else {
@@ -46,7 +49,7 @@ export function AuthProvider({ children }) {
           if (cached) {
             try {
               const u = JSON.parse(cached)
-              if (u.rol === 'elevum') {
+              if (BACKOFFICE_ROLES.includes(u.rol)) {
                 setUser(u)
                 setLoading(false)
                 return
