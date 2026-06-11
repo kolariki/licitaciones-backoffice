@@ -1,6 +1,6 @@
 import React from 'react'
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom'
-import { LayoutDashboard, Users, Bell, BarChart3, FileText, Menu, Layers, Send, LogOut, MailCheck, Server, Eye, Database, Mail, Zap, BookOpen, Brain, ShieldCheck, Briefcase, MessageSquare } from 'lucide-react'
+import { LayoutDashboard, Users, Bell, BarChart3, FileText, Menu, Layers, Send, LogOut, MailCheck, Server, Eye, Database, Mail, Zap, BookOpen, Brain, ShieldCheck, Briefcase, MessageSquare, CreditCard } from 'lucide-react'
 import { AuthProvider, useAuth } from './hooks/useAuth'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
@@ -21,6 +21,7 @@ import AlertasDescripciones from './pages/AlertasDescripciones'
 import AprobadasPendientes from './pages/AprobadasPendientes'
 import AlertasPerfiles from './pages/AlertasPerfiles'
 import ConsultasExpertos from './pages/ConsultasExpertos'
+import PagosRechazados from './pages/PagosRechazados'
 
 const SUPERADMIN_EMAIL = 'ivankolariki1990@gmail.com'
 
@@ -41,6 +42,7 @@ const navItems = [
   { to: '/alertas-perfiles', icon: Briefcase, label: 'Alertas Perfiles', superadminOnly: true },
   { to: '/licitaciones-cr', icon: Database, label: 'BD Licitaciones CR' },
   { to: '/email-masivo', icon: Mail, label: 'Email Masivo' },
+  { to: '/pagos-rechazados', icon: CreditCard, label: 'Pagos Rechazados' },
 ]
 
 function Sidebar({ open, setOpen, alertsPending, onDismissAlerts }) {
@@ -168,6 +170,7 @@ function ProtectedApp() {
             <Route path="/licitaciones" element={<Licitaciones />} />
             <Route path="/recomendaciones" element={<Recomendaciones />} />
             <Route path="/consultas" element={<ConsultasExpertos />} />
+            <Route path="/pagos-rechazados" element={<PagosRechazados />} />
             <Route path="/alertas-enviadas" element={<AlertasEnviadas />} />
             <Route path="/auto-envios" element={<SuperadminRoute><AutoEnvios /></SuperadminRoute>} />
             <Route path="/palabras-aprobadas" element={<SuperadminRoute><PalabrasAprobadas /></SuperadminRoute>} />
